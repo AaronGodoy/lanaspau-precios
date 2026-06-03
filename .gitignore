@@ -1,0 +1,31 @@
+# Entornos virtuales y dependencias de Python
+backend/venv/
+backend/env/
+backend/__pycache__/
+backend/**/*.pyc
+backend/.pytest_cache/
+*.py[cod]
+*$py.class
+
+# Dependencias de Node
+frontend/node_modules/
+
+# Builds y compilados
+frontend/dist/
+frontend/build/
+
+# Variables de entorno y secretos
+.env
+.env.*
+!.env.example
+frontend/.env.local
+frontend/.env.*.local
+
+# Archivos de SO y editores
+.DS_Store
+.vscode/
+.idea/
+
+# Base de datos local (si se usara SQLite, aunque usamos Postgres)
+*.sqlite3
+*.db

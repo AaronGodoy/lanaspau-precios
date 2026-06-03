@@ -51,18 +51,54 @@ def get_price_history(product_id: int, db: Annotated[Session, Depends(get_db)], 
 
 @router.get('/dashboard', response_model=DashboardResponse)
 def dashboard(db: Annotated[Session, Depends(get_db)], current_user: Annotated[User, Depends(get_current_user)]):
-    products = db.scalars(select(Product).order_by(Product.fecha_creacion.desc())).all()
+    products = db.scalars(select(Product).where(Product.activo.is_(True)).order_by(Product.fecha_creacion.desc())).all()
     latest_rows = []
+    
+    total_invertido = 0.0
+    potencial_venta = 0.0
+    
     for product in products:
         latest_cost = db.scalar(select(ProductCost).where(ProductCost.producto_id == product.id).order_by(ProductCost.fecha_compra.desc(), ProductCost.id.desc()))
         latest_price = db.scalar(select(CalculatedPrice).where(CalculatedPrice.producto_id == product.id).order_by(CalculatedPrice.fecha_calculo.desc(), CalculatedPrice.id.desc()))
-        latest_rows.append({'producto_id': product.id, 'codigo_producto': product.codigo_producto, 'nombre': product.nombre, 'categoria': product.categoria, 'costo_total': to_float(latest_cost.costo_total) if latest_cost else None, 'precio_recomendado': to_float(latest_price.precio_recomendado) if latest_price else None, 'margen_estimado': to_float(latest_price.margen_estimado) if latest_price else None, 'fecha': latest_price.fecha_calculo if latest_price else product.fecha_creacion})
+        
+        costo_unitario = to_float(latest_cost.costo_total) if latest_cost else None
+        precio_rec_unitario = to_float(latest_price.precio_recomendado) if latest_price else None
+        margen = to_float(latest_price.margen_estimado) if latest_price else None
+        
+        stock_actual = product.stock if product.stock else 0
+        
+        if costo_unitario is not None:
+            total_invertido += (costo_unitario * stock_actual)
+            
+        if precio_rec_unitario is not None:
+            potencial_venta += (precio_rec_unitario * stock_actual)
+            
+        latest_rows.append({
+            'producto_id': product.id, 
+            'codigo_producto': product.codigo_producto, 
+            'nombre': product.nombre, 
+            'categoria': product.categoria, 
+            'costo_total': costo_unitario, 
+            'precio_recomendado': precio_rec_unitario, 
+            'margen_estimado': margen, 
+            'fecha': latest_price.fecha_calculo if latest_price else product.fecha_creacion
+        })
+        
     rows_with_margin = [row for row in latest_rows if row['margen_estimado'] is not None]
-    total_products = db.scalar(select(func.count(Product.id)).where(Product.activo.is_(True))) or 0
+    total_products = len(products)
+    
     promedio_margen = round(sum(row['margen_estimado'] for row in rows_with_margin) / len(rows_with_margin), 2) if rows_with_margin else 0
-    total_invertido = round(sum(row['costo_total'] or 0 for row in latest_rows), 2)
-    potencial_venta = round(sum(row['precio_recomendado'] or 0 for row in latest_rows), 2)
+    
     mejor = [DashboardItem(**row) for row in sorted(rows_with_margin, key=lambda row: row['margen_estimado'], reverse=True)[:5]]
     peor = [DashboardItem(**row) for row in sorted(rows_with_margin, key=lambda row: row['margen_estimado'])[:5]]
     ultimos = [DashboardItem(**row) for row in latest_rows[:5]]
-    return DashboardResponse(total_productos=total_products, promedio_margen=promedio_margen, total_invertido_inventario=total_invertido, valor_potencial_venta=potencial_venta, productos_mejor_margen=mejor, productos_menor_margen=peor, ultimos_productos=ultimos)
+    
+    return DashboardResponse(
+        total_productos=total_products, 
+        promedio_margen=promedio_margen, 
+        total_invertido_inventario=round(total_invertido, 2), 
+        valor_potencial_venta=round(potencial_venta, 2), 
+        productos_mejor_margen=mejor, 
+        productos_menor_margen=peor, 
+        ultimos_productos=ultimos
+    )

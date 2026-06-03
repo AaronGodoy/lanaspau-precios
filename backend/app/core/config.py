@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     algorithm: str = 'HS256'
     access_token_expire_minutes: int = 480
     database_url: str = 'postgresql+psycopg2://postgres:postgres@localhost:5432/revesderecho'
-    backend_cors_origins: str = 'http://localhost:5173'
+    backend_cors_origins: str = 'http://localhost:5173,https://lanaspau-frontend.onrender.com'
     default_admin_email: str = 'admin@lanaspau.cl'
     default_admin_password: str = 'LanasPau_Admin_9x$2024!'
 

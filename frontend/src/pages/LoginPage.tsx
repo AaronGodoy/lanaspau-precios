@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 export default function LoginPage() {
   const { login, loading, isAuthenticated } = useAuth();
   const [email, setEmail] = useState('admin@lanaspau.cl');
-  const [password, setPassword] = useState('Admin1234!');
+  const [password, setPassword] = useState('LanasPau_Admin_9x$2024!');
   const [error, setError] = useState('');
 
   if (isAuthenticated) {
@@ -45,6 +45,7 @@ export default function LoginPage() {
             <button type="submit" disabled={loading} className="w-full rounded-2xl bg-brand-500 px-4 py-3 text-base font-semibold text-white hover:bg-brand-600 disabled:opacity-60">
               {loading ? 'Ingresando...' : 'Entrar al sistema'}
             </button>
+            {loading && <p className="text-center text-xs text-slate-500 animate-pulse mt-2">Despertando el servidor (puede tardar hasta 50 segundos)...</p>}
           </form>
         </section>
       </div>

@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     database_url: str = 'postgresql+psycopg2://postgres:postgres@localhost:5432/revesderecho'
     backend_cors_origins: str = 'http://localhost:5173'
     default_admin_email: str = 'admin@lanaspau.cl'
-    default_admin_password: str = 'Admin1234!'
+    default_admin_password: str = 'LanasPau_Admin_9x$2024!'
 
     @computed_field
     @property

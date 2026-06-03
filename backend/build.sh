@@ -5,21 +5,11 @@ set -o errexit
 echo "Installing dependencies..."
 pip install -r requirements.txt
 
-echo "Running migrations..."
-# Forzamos que Alembic ignore el historial roto de versiones y obligamos a recrear las tablas base.
-# Esto es útil si las migraciones en producción quedaron en un estado inconsistente.
-python -c "
-import sys
-import os
-sys.path.append(os.getcwd())
-from app.db.database import Base, engine
-Base.metadata.drop_all(bind=engine)
-Base.metadata.create_all(bind=engine)
-"
-alembic stamp head
+echo "Running database initialization..."
+# Forzamos que se eliminen y creen todas las tablas para solucionar inconsistencias de migraciones en producción
+python reset_db.py
 
-# We seed the database only if it's explicitly allowed or needed
-# Uncomment the following line if you want the seed script to run on every deploy
-python -m app.utils.seed_data
+# Marcar las migraciones como actualizadas para que alembic no intente correrlas
+alembic stamp head
 
 echo "Build script completed."

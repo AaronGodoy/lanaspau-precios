@@ -16,10 +16,14 @@ app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins or ['http
 
 @app.on_event('startup')
 def on_startup() -> None:
-    Base.metadata.create_all(bind=engine)
+    # We do NOT run Base.metadata.create_all(bind=engine) here because we use Alembic for migrations.
+    # Running create_all can conflict with Alembic migrations if run concurrently.
     with SessionLocal() as db:
-        ensure_default_settings(db)
-        ensure_admin_user(db)
+        try:
+            ensure_default_settings(db)
+            ensure_admin_user(db)
+        except Exception as e:
+            print(f"Startup warning (safe to ignore if running migrations): {e}")
 
 @app.get('/health')
 def health_check() -> dict:

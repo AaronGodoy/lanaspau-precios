@@ -8,7 +8,14 @@ pip install -r requirements.txt
 echo "Running migrations..."
 # Forzamos que Alembic ignore el historial roto de versiones y obligamos a recrear las tablas base.
 # Esto es útil si las migraciones en producción quedaron en un estado inconsistente.
-python -c "from app.db.database import Base, engine; Base.metadata.drop_all(bind=engine); Base.metadata.create_all(bind=engine)"
+python -c "
+import sys
+import os
+sys.path.append(os.getcwd())
+from app.db.database import Base, engine
+Base.metadata.drop_all(bind=engine)
+Base.metadata.create_all(bind=engine)
+"
 alembic stamp head
 
 # We seed the database only if it's explicitly allowed or needed

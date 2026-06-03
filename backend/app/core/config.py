@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     secret_key: str = 'change-me'
     algorithm: str = 'HS256'
     access_token_expire_minutes: int = 480
-    database_url: str = 'postgresql+psycopg2://postgres:postgres@localhost:5432/revesderecho'
+    database_url: str = 'postgresql+psycopg2://postgres:postgres@localhost:5432/lanaspau'
     backend_cors_origins: str = '*'
     default_admin_email: str = 'admin@lanaspau.cl'
     default_admin_password: str = 'LanasPau_Admin_9x$2024!'

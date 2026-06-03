@@ -34,7 +34,7 @@ export default function DashboardPage() {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="codigo_producto" />
                   <YAxis />
-                  <Tooltip formatter={(value: number | string | Array<number | string>) => typeof value === 'number' ? formatPercent(value) : value} />
+                  <Tooltip formatter={(value: any) => typeof value === 'number' ? formatPercent(value) : value} />
                   <Bar dataKey="margen_estimado" fill="#f97316" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>

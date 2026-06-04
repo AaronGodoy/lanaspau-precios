@@ -168,9 +168,9 @@ export default function ProductsPage() {
         ...form,
         proveedor_id: form.proveedor_id ? Number(form.proveedor_id) : null,
         costo_inicial_total: form.costo_inicial_total ? Number(form.costo_inicial_total) : null,
-        margen_minimo_porcentaje: form.margen_minimo_porcentaje ? Number(form.margen_minimo_porcentaje) : null,
-        margen_recomendado_porcentaje: form.margen_recomendado_porcentaje ? Number(form.margen_recomendado_porcentaje) : null,
-        margen_premium_porcentaje: form.margen_premium_porcentaje ? Number(form.margen_premium_porcentaje) : null,
+        margen_minimo_porcentaje: form.margen_minimo_porcentaje !== '' ? Number(form.margen_minimo_porcentaje) : null,
+        margen_recomendado_porcentaje: form.margen_recomendado_porcentaje !== '' ? Number(form.margen_recomendado_porcentaje) : null,
+        margen_premium_porcentaje: form.margen_premium_porcentaje !== '' ? Number(form.margen_premium_porcentaje) : null,
       };
 
       if (editingProduct) {

@@ -115,8 +115,37 @@ def update_product(product_id: int, payload: ProductUpdate, db: Annotated[Sessio
         exists = db.scalar(select(Product).where(Product.codigo_producto == updates['codigo_producto'], Product.id != product_id))
         if exists:
             raise HTTPException(status_code=400, detail='El codigo de producto ya esta en uso.')
+    
+    # Check if margins are being updated to trigger price recalculation
+    margins_updated = any(k in updates for k in ['margen_minimo_porcentaje', 'margen_recomendado_porcentaje', 'margen_premium_porcentaje'])
+    
     for field, value in updates.items():
         setattr(product, field, value)
+        
+    db.flush() # Ensure product margins are updated in the session
+    
+    if margins_updated:
+        # Recalculate prices if there's a latest cost
+        latest_cost = db.scalar(select(ProductCost).where(ProductCost.producto_id == product.id).order_by(ProductCost.fecha_compra.desc(), ProductCost.id.desc()))
+        if latest_cost:
+            settings = db.scalar(select(PriceSetting).limit(1))
+            pricing = calculate_pricing_from_total(
+                costo_total=to_float(latest_cost.costo_total), 
+                settings=settings, 
+                product=product
+            )
+            calc_price = CalculatedPrice(
+                producto_id=product.id,
+                costo_total=pricing['costo_total'],
+                precio_minimo=pricing['precio_minimo'],
+                precio_recomendado=pricing['precio_recomendado'],
+                precio_premium=pricing['precio_premium'],
+                margen_estimado=pricing['margen_estimado'],
+                utilidad_estimada=pricing['utilidad_estimada']
+            )
+            db.add(calc_price)
+            log_change(db, current_user.id, 'calculated_prices', product.id, 'crear', f'Precios recalculados por cambio de márgenes en {product.codigo_producto}.')
+
     log_change(db, current_user.id, 'products', product.id, 'editar', f'Producto {product.codigo_producto} actualizado.')
     db.commit()
     db.refresh(product)

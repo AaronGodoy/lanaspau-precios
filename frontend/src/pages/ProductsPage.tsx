@@ -19,7 +19,6 @@ export default function ProductsPage() {
   const [showBulkBarcodeModal, setShowBulkBarcodeModal] = useState(false);
   const [selectedProductForBarcode, setSelectedProductForBarcode] = useState<Product | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [showMargins, setShowMargins] = useState(false);
 
   const [form, setForm] = useState({
     nombre: '', marca: '', categoria: '', color: '', gramaje: '', proveedor_id: '' as number | string,
@@ -129,7 +128,6 @@ export default function ProductsPage() {
   const openCreateModal = () => {
     setEditingProduct(null);
     setForm({ nombre: '', marca: '', categoria: '', color: '', gramaje: '', proveedor_id: '', stock: 0, stock_minimo: 5, costo_inicial_total: '', compra_incluye_iva: false, margen_minimo_porcentaje: '', margen_recomendado_porcentaje: '', margen_premium_porcentaje: '' });
-    setShowMargins(false);
     setShowModal(true);
   };
 
@@ -150,7 +148,6 @@ export default function ProductsPage() {
       margen_recomendado_porcentaje: p.margen_recomendado_porcentaje?.toString() || '',
       margen_premium_porcentaje: p.margen_premium_porcentaje?.toString() || ''
     });
-    setShowMargins(!!(p.margen_minimo_porcentaje || p.margen_recomendado_porcentaje || p.margen_premium_porcentaje));
     setShowModal(true);
   };
   
@@ -345,27 +342,24 @@ export default function ProductsPage() {
               )}
 
               <div className="mt-6 border-t border-slate-100 pt-4">
-                <button type="button" onClick={() => setShowMargins(!showMargins)} className="flex items-center gap-2 text-sm font-medium text-brand-600 hover:text-brand-700">
-                  <Settings2 size={16} />
-                  {showMargins ? 'Ocultar reglas comerciales' : 'Configurar reglas comerciales específicas'}
-                </button>
-                
-                {showMargins && (
-                  <div className="mt-4 rounded-xl bg-slate-50 p-4 space-y-3 border border-slate-200">
-                    <p className="text-xs text-slate-500 mb-3">Si dejas estos campos vacíos, se usarán los márgenes globales de la configuración principal.</p>
-                    <div className="grid grid-cols-3 gap-3">
-                      <label className="block text-xs font-medium text-slate-700">Margen Mínimo (%)
-                        <input type="number" step="0.1" className="mt-1 w-full rounded-lg border border-slate-200 p-2" placeholder="Ej: 20" value={form.margen_minimo_porcentaje} onChange={e => setForm({...form, margen_minimo_porcentaje: e.target.value})} />
-                      </label>
-                      <label className="block text-xs font-medium text-slate-700">Margen Recomendado (%)
-                        <input type="number" step="0.1" className="mt-1 w-full rounded-lg border border-slate-200 p-2" placeholder="Ej: 35" value={form.margen_recomendado_porcentaje} onChange={e => setForm({...form, margen_recomendado_porcentaje: e.target.value})} />
-                      </label>
-                      <label className="block text-xs font-medium text-slate-700">Margen Premium (%)
-                        <input type="number" step="0.1" className="mt-1 w-full rounded-lg border border-slate-200 p-2" placeholder="Ej: 45" value={form.margen_premium_porcentaje} onChange={e => setForm({...form, margen_premium_porcentaje: e.target.value})} />
-                      </label>
-                    </div>
-                  </div>
-                )}
+                <h4 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                  <Settings2 size={16} className="text-brand-500" />
+                  Reglas Comerciales Específicas
+                </h4>
+                <p className="text-xs text-slate-500 mb-3">
+                  Define el margen de ganancia exclusivo para este producto. Si dejas estos campos vacíos, se usarán los porcentajes globales de Configuración.
+                </p>
+                <div className="grid grid-cols-3 gap-3">
+                  <label className="block text-xs font-medium text-slate-700">Margen Mínimo (%)
+                    <input type="number" step="0.1" className="mt-1 w-full rounded-lg border border-slate-200 p-2" placeholder="Ej: 20" value={form.margen_minimo_porcentaje} onChange={e => setForm({...form, margen_minimo_porcentaje: e.target.value})} />
+                  </label>
+                  <label className="block text-xs font-medium text-slate-700">Margen Recomendado (%)
+                    <input type="number" step="0.1" className="mt-1 w-full rounded-lg border border-slate-200 p-2" placeholder="Ej: 35" value={form.margen_recomendado_porcentaje} onChange={e => setForm({...form, margen_recomendado_porcentaje: e.target.value})} />
+                  </label>
+                  <label className="block text-xs font-medium text-slate-700">Margen Premium (%)
+                    <input type="number" step="0.1" className="mt-1 w-full rounded-lg border border-slate-200 p-2" placeholder="Ej: 45" value={form.margen_premium_porcentaje} onChange={e => setForm({...form, margen_premium_porcentaje: e.target.value})} />
+                  </label>
+                </div>
               </div>
 
               <div className="mt-6 flex justify-end gap-3 pt-4">

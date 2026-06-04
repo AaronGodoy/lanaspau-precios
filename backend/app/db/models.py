@@ -14,6 +14,19 @@ class User(Base):
     fecha_creacion: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     cambios: Mapped[list['ChangeHistory']] = relationship(back_populates='usuario')
 
+class Supplier(Base):
+    __tablename__ = 'suppliers'
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    nombre: Mapped[str] = mapped_column(String(150), nullable=False, index=True)
+    contacto: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    telefono: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    direccion: Mapped[str | None] = mapped_column(Text, nullable=True)
+    notas: Mapped[str | None] = mapped_column(Text, nullable=True)
+    activo: Mapped[bool] = mapped_column(Boolean, default=True)
+    fecha_creacion: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    productos: Mapped[list['Product']] = relationship(back_populates='proveedor_rel')
+
 class Product(Base):
     __tablename__ = 'products'
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
@@ -24,7 +37,7 @@ class Product(Base):
     color: Mapped[str | None] = mapped_column(String(60), nullable=True, index=True)
     gramaje: Mapped[str | None] = mapped_column(String(60), nullable=True)
     metros: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
-    proveedor: Mapped[str] = mapped_column(String(120), default='Lanas Pau')
+    proveedor_id: Mapped[int | None] = mapped_column(ForeignKey('suppliers.id'), nullable=True)
     descripcion: Mapped[str | None] = mapped_column(Text, nullable=True)
     stock: Mapped[int] = mapped_column(default=0)
     stock_minimo: Mapped[int] = mapped_column(default=5)
@@ -36,6 +49,7 @@ class Product(Base):
     costos: Mapped[list['ProductCost']] = relationship(back_populates='producto', cascade='all, delete-orphan')
     precios_calculados: Mapped[list['CalculatedPrice']] = relationship(back_populates='producto', cascade='all, delete-orphan')
     ventas_detalle: Mapped[list['SaleItem']] = relationship(back_populates='producto')
+    proveedor_rel: Mapped['Supplier | None'] = relationship(back_populates='productos')
 
 class Sale(Base):
     __tablename__ = 'sales'

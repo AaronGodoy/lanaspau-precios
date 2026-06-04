@@ -18,7 +18,8 @@ def build_product_response(db: Session, product: Product) -> ProductResponse:
 
 @router.get('', response_model=list[ProductResponse])
 def list_products(db: Annotated[Session, Depends(get_db)], current_user: Annotated[User, Depends(get_current_user)], q: str | None = Query(default=None), include_inactive: bool = False):
-    query = select(Product)
+    from sqlalchemy.orm import joinedload
+    query = select(Product).options(joinedload(Product.proveedor_rel))
     if not include_inactive:
         query = query.where(Product.activo.is_(True))
     if q:

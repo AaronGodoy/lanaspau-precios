@@ -18,7 +18,8 @@ export interface Product {
   color?: string | null;
   gramaje?: string | null;
   metros?: number | null;
-  proveedor: string;
+  proveedor_id?: number;
+  proveedor_rel?: { id: number; nombre: string; };
   descripcion?: string | null;
   stock: number;
   margen_minimo_porcentaje?: number | null;

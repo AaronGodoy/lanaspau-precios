@@ -10,6 +10,7 @@ from app.modules.reports.router import router as reports_router
 from app.modules.settings.router import router as settings_router
 from app.modules.users.router import router as users_router
 from app.modules.sales.router import router as sales_router
+from app.modules.suppliers.router import router as suppliers_router
 from app.utils.bootstrap import ensure_admin_user, ensure_default_settings
 
 app = FastAPI(title=settings.project_name, version='1.0.0', description='Sistema web para costos, precios de venta e inventario de productos de lana.')
@@ -38,3 +39,4 @@ app.include_router(pricing_router, prefix=settings.api_v1_prefix)
 app.include_router(settings_router, prefix=settings.api_v1_prefix)
 app.include_router(reports_router, prefix=settings.api_v1_prefix)
 app.include_router(sales_router, prefix=settings.api_v1_prefix)
+app.include_router(suppliers_router, prefix=settings.api_v1_prefix)

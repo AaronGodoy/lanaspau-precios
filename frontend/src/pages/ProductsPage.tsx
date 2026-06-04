@@ -5,9 +5,11 @@ import axios from 'axios';
 import { api } from '../services/api';
 import type { Product } from '../services/types';
 import { formatCurrency } from '../utils/format';
+import type { Supplier } from './SuppliersPage';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   
@@ -16,7 +18,7 @@ export default function ProductsPage() {
   const [showMargins, setShowMargins] = useState(false);
 
   const [form, setForm] = useState({
-    nombre: '', marca: '', categoria: '', color: '', gramaje: '', proveedor: 'Lanas Pau',
+    nombre: '', marca: '', categoria: '', color: '', gramaje: '', proveedor_id: '' as number | string,
     stock: 0,
     stock_minimo: 5,
     costo_inicial_total: '',
@@ -29,8 +31,15 @@ export default function ProductsPage() {
   const fetchProducts = useCallback(async (currentSearch: string = search) => {
     setLoading(true);
     try {
-      const res = await api.get('/products', { params: { q: currentSearch } });
-      setProducts(res.data);
+      const [prodRes, suppRes] = await Promise.all([
+        api.get('/products', { params: { q: currentSearch } }),
+        api.get('/suppliers')
+      ]);
+      setProducts(prodRes.data);
+      setSuppliers(suppRes.data);
+    } catch (err) {
+      console.error(err);
+      alert('Error al cargar datos');
     } finally {
       setLoading(false);
     }
@@ -45,7 +54,7 @@ export default function ProductsPage() {
 
   const openCreateModal = () => {
     setEditingProduct(null);
-    setForm({ nombre: '', marca: '', categoria: '', color: '', gramaje: '', proveedor: 'Lanas Pau', stock: 0, stock_minimo: 5, costo_inicial_total: '', compra_incluye_iva: false, margen_minimo_porcentaje: '', margen_recomendado_porcentaje: '', margen_premium_porcentaje: '' });
+    setForm({ nombre: '', marca: '', categoria: '', color: '', gramaje: '', proveedor_id: '', stock: 0, stock_minimo: 5, costo_inicial_total: '', compra_incluye_iva: false, margen_minimo_porcentaje: '', margen_recomendado_porcentaje: '', margen_premium_porcentaje: '' });
     setShowMargins(false);
     setShowModal(true);
   };
@@ -58,11 +67,11 @@ export default function ProductsPage() {
       categoria: p.categoria || '',
       color: p.color || '',
       gramaje: p.gramaje || '',
-      proveedor: p.proveedor || 'Lanas Pau',
+      proveedor_id: p.proveedor_id || '',
       stock: p.stock || 0,
-      stock_minimo: (p as any).stock_minimo || 5,
-      costo_inicial_total: '',
-      compra_incluye_iva: false,
+      stock_minimo: p.stock_minimo || 5,
+      costo_inicial_total: p.costo_inicial_total?.toString() || '',
+      compra_incluye_iva: p.compra_incluye_iva || false,  
       margen_minimo_porcentaje: p.margen_minimo_porcentaje?.toString() || '',
       margen_recomendado_porcentaje: p.margen_recomendado_porcentaje?.toString() || '',
       margen_premium_porcentaje: p.margen_premium_porcentaje?.toString() || ''
@@ -70,7 +79,7 @@ export default function ProductsPage() {
     setShowMargins(!!(p.margen_minimo_porcentaje || p.margen_recomendado_porcentaje || p.margen_premium_porcentaje));
     setShowModal(true);
   };
-
+  
   const handleDelete = async (id: number) => {
     if (!confirm('¿Estás seguro de eliminar este producto?')) return;
     try {
@@ -86,6 +95,7 @@ export default function ProductsPage() {
     try {
       const payload = {
         ...form,
+        proveedor_id: form.proveedor_id ? Number(form.proveedor_id) : null,
         costo_inicial_total: form.costo_inicial_total ? Number(form.costo_inicial_total) : null,
         margen_minimo_porcentaje: form.margen_minimo_porcentaje ? Number(form.margen_minimo_porcentaje) : null,
         margen_recomendado_porcentaje: form.margen_recomendado_porcentaje ? Number(form.margen_recomendado_porcentaje) : null,
@@ -202,17 +212,27 @@ export default function ProductsPage() {
                 </label>
               </div>
               <div className="grid grid-cols-2 gap-4">
+                <label className="block text-sm font-medium text-slate-700">Proveedor
+                  <select className="mt-1 w-full rounded-xl border border-slate-200 p-2.5 bg-white" value={form.proveedor_id} onChange={e => setForm({...form, proveedor_id: e.target.value})}>
+                    <option value="">-- Seleccionar Proveedor --</option>
+                    {suppliers.map(s => (
+                      <option key={s.id} value={s.id}>{s.nombre}</option>
+                    ))}
+                  </select>
+                </label>
                 <label className="block text-sm font-medium text-slate-700">Marca
                   <input className="mt-1 w-full rounded-xl border border-slate-200 p-2.5" value={form.marca} onChange={e => setForm({...form, marca: e.target.value})} />
                 </label>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <label className="block text-sm font-medium text-slate-700">Categoría
                   <input className="mt-1 w-full rounded-xl border border-slate-200 p-2.5" value={form.categoria} onChange={e => setForm({...form, categoria: e.target.value})} />
                 </label>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
                 <label className="block text-sm font-medium text-slate-700">Color
                   <input className="mt-1 w-full rounded-xl border border-slate-200 p-2.5" value={form.color} onChange={e => setForm({...form, color: e.target.value})} />
                 </label>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <label className="block text-sm font-medium text-slate-700">Gramaje
                   <input className="mt-1 w-full rounded-xl border border-slate-200 p-2.5" placeholder="Ej: 100g" value={form.gramaje} onChange={e => setForm({...form, gramaje: e.target.value})} />
                 </label>

@@ -10,6 +10,7 @@ import ProductsPage from '../pages/ProductsPage';
 import ReportsPage from '../pages/ReportsPage';
 import SalesPage from '../pages/SalesPage';
 import SettingsPage from '../pages/SettingsPage';
+import SuppliersPage from '../pages/SuppliersPage';
 import UsersPage from '../pages/UsersPage';
 
 function ProtectedRoute({ children }: { children: React.ReactElement }) {
@@ -27,6 +28,7 @@ export default function AppRoutes() {
         <Route path="products" element={<ProductsPage />} />
         <Route path="sales" element={<SalesPage />} />
         <Route path="inventory" element={<InventoryPage />} />
+        <Route path="suppliers" element={<SuppliersPage />} />
         <Route path="calculator" element={<CalculatorPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="settings" element={<SettingsPage />} />

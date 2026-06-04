@@ -9,7 +9,7 @@ class ProductBase(BaseModel):
     color: str | None = Field(default=None, max_length=60)
     gramaje: str | None = Field(default=None, max_length=60)
     metros: float | None = None
-    proveedor: str = Field(default='Lanas Pau', max_length=120)
+    proveedor_id: int | None = None
     descripcion: str | None = None
     stock: int = Field(default=0, ge=0)
     margen_minimo_porcentaje: float | None = Field(default=None, ge=0, le=100)
@@ -29,7 +29,7 @@ class ProductUpdate(BaseModel):
     color: str | None = Field(default=None, max_length=60)
     gramaje: str | None = Field(default=None, max_length=60)
     metros: float | None = None
-    proveedor: str | None = Field(default=None, max_length=120)
+    proveedor_id: int | None = None
     descripcion: str | None = None
     stock: int | None = Field(default=None, ge=0)
     margen_minimo_porcentaje: float | None = Field(default=None, ge=0, le=100)
@@ -37,12 +37,19 @@ class ProductUpdate(BaseModel):
     margen_premium_porcentaje: float | None = Field(default=None, ge=0, le=100)
     activo: bool | None = None
 
+class SupplierBrief(BaseModel):
+    id: int
+    nombre: str
+
+    model_config = ConfigDict(from_attributes=True)
+
 class ProductResponse(ProductBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
     fecha_creacion: datetime
     latest_cost_total: float | None = None
     latest_recommended_price: float | None = None
+    proveedor_rel: SupplierBrief | None = None
 
 class ProductCostCreate(BaseModel):
     producto_id: int

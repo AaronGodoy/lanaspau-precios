@@ -50,6 +50,21 @@ class Product(Base):
     precios_calculados: Mapped[list['CalculatedPrice']] = relationship(back_populates='producto', cascade='all, delete-orphan')
     ventas_detalle: Mapped[list['SaleItem']] = relationship(back_populates='producto')
     proveedor_rel: Mapped['Supplier | None'] = relationship(back_populates='productos')
+    movimientos_inventario: Mapped[list['InventoryMovement']] = relationship(back_populates='producto', cascade='all, delete-orphan')
+
+class InventoryMovement(Base):
+    __tablename__ = 'inventory_movements'
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    producto_id: Mapped[int] = mapped_column(ForeignKey('products.id'), nullable=False, index=True)
+    tipo: Mapped[str] = mapped_column(String(20), nullable=False) # 'ingreso', 'merma', 'devolucion', 'ajuste'
+    cantidad: Mapped[int] = mapped_column(Integer, nullable=False)
+    costo_unitario: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True) # Para nuevos ingresos
+    motivo: Mapped[str | None] = mapped_column(Text, nullable=True)
+    fecha: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    usuario_id: Mapped[int | None] = mapped_column(ForeignKey('users.id'), nullable=True)
+
+    producto: Mapped['Product'] = relationship(back_populates='movimientos_inventario')
+    usuario: Mapped['User'] = relationship()
 
 class Sale(Base):
     __tablename__ = 'sales'

@@ -18,7 +18,7 @@ interface Sale {
   total: number;
   metodo_pago: string;
   fecha_venta: string;
-  items: any[];
+  items: unknown[];
 }
 
 interface InventoryMovement {
@@ -50,7 +50,6 @@ export default function InventoryPage() {
 
 
   const fetchData = async () => {
-    setLoading(true);
     try {
       const [alertsRes, salesRes, movementsRes, productsRes] = await Promise.all([
         api.get('/sales/alerts/low-stock'),

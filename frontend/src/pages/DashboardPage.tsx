@@ -15,6 +15,20 @@ interface DashboardStats {
   grafico_top_productos: { name: string; cantidad: number }[];
 }
 
+const CustomTooltip = ({ active, payload, label }: { active?: boolean, payload?: any[], label?: string }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white p-3 rounded-xl shadow-lg border border-slate-100">
+        <p className="font-semibold text-slate-900 mb-1">{label}</p>
+        <p className="text-brand-600 font-medium">
+          {payload[0].name === 'total' ? formatCurrency(payload[0].value) : `${payload[0].value} un.`}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,20 +46,6 @@ export default function DashboardPage() {
     };
     fetchStats();
   }, []);
-
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white p-3 rounded-xl shadow-lg border border-slate-100">
-          <p className="font-semibold text-slate-900 mb-1">{label}</p>
-          <p className="text-brand-600 font-medium">
-            {payload[0].name === 'total' ? formatCurrency(payload[0].value) : `${payload[0].value} un.`}
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <div className="space-y-6">

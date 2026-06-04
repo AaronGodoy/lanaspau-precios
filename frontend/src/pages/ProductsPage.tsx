@@ -323,7 +323,7 @@ export default function ProductsPage() {
                 </label>
               </div>
 
-              {!editingProduct && (
+              {!editingProduct ? (
                 <div className="mt-6 border-t border-slate-100 pt-4">
                   <h4 className="text-sm font-semibold text-slate-900 mb-3">Costo inicial (Opcional)</h4>
                   <p className="text-xs text-slate-500 mb-3">Ingresa el costo TOTAL de tu compra para generar el cálculo inicial automáticamente (se dividirá por el stock ingresado arriba).</p>
@@ -337,6 +337,26 @@ export default function ProductsPage() {
                         El valor incluye IVA
                       </label>
                     </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-6 border-t border-slate-100 pt-4">
+                  <h4 className="text-sm font-semibold text-slate-900 mb-3">Costo actual del producto</h4>
+                  <div className="rounded-xl bg-slate-50 p-4 border border-slate-200">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-sm font-medium text-slate-700">Costo Total Unitario Registrado:</p>
+                        <p className="text-xs text-slate-500 mt-1">Este es el último costo calculado para este producto.</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-slate-900">
+                          {editingProduct.latest_cost_total ? `$${editingProduct.latest_cost_total.toLocaleString('es-CL')}` : 'Sin costo registrado'}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-brand-600 mt-3 font-medium">
+                      * Nota: Para ingresar una nueva compra o actualizar el costo, utiliza el módulo "Ingreso de Costos".
+                    </p>
                   </div>
                 </div>
               )}

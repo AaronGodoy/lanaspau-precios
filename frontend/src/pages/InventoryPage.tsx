@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, TrendingDown, TrendingUp, DollarSign, RefreshCw, PackagePlus, AlertCircle } from 'lucide-react';
+import { AlertTriangle, TrendingDown, DollarSign, RefreshCw, PackagePlus, AlertCircle } from 'lucide-react';
 import SectionCard from '../components/SectionCard';
 import { api } from '../services/api';
 import { formatCurrency } from '../utils/format';
-import { Product } from '../services/types';
+import type { Product } from '../services/types';
 
 interface LowStockAlert {
   producto_id: number;

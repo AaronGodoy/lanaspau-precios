@@ -52,7 +52,10 @@ export default function ProductsPage() {
     const delay = setTimeout(() => {
       fetchProducts(search);
     }, 0);
-    const handlePrintBarcode = () => {
+    return () => clearTimeout(delay);
+  }, [search, fetchProducts]);
+
+  const handlePrintBarcode = () => {
     const printContent = document.getElementById('barcode-print-area');
     const windowPrint = window.open('', '', 'width=600,height=400');
     if (windowPrint && printContent) {
@@ -82,9 +85,6 @@ export default function ProductsPage() {
       windowPrint.document.close();
     }
   };
-
-  return () => clearTimeout(delay);
-  }, [search, fetchProducts]);
 
   const openCreateModal = () => {
     setEditingProduct(null);

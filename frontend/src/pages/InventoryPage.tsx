@@ -1,21 +1,21 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, TrendingDown, PackageOpen, ArrowUpRight } from 'lucide-react';
+import { AlertTriangle, TrendingDown } from 'lucide-react';
 import SectionCard from '../components/SectionCard';
 import { api } from '../services/api';
 import { formatCurrency } from '../utils/format';
 
 interface LowStockAlert {
-  producto_id: int;
-  codigo_producto: str;
-  nombre: str;
-  stock_actual: int;
-  stock_minimo: int;
+  producto_id: number;
+  codigo_producto: string;
+  nombre: string;
+  stock_actual: number;
+  stock_minimo: number;
 }
 
 interface Sale {
-  id: int;
-  total: float;
-  metodo_pago: str;
+  id: number;
+  total: number;
+  metodo_pago: string;
   fecha_venta: string;
   items: any[];
 }
@@ -24,6 +24,7 @@ export default function InventoryPage() {
   const [alerts, setAlerts] = useState<LowStockAlert[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -72,7 +73,7 @@ export default function InventoryPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <SectionCard title="Productos con Stock Crítico" icon={<PackageOpen size={20} className="text-red-500" />}>
+          <SectionCard title="Productos con Stock Crítico">
           {loading ? <p className="text-slate-500">Cargando alertas...</p> : alerts.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-slate-500">Todo en orden. No hay productos con stock crítico.</p>
@@ -97,7 +98,7 @@ export default function InventoryPage() {
           )}
         </SectionCard>
 
-        <SectionCard title="Últimas Ventas" icon={<ArrowUpRight size={20} className="text-brand-500" />}>
+        <SectionCard title="Últimas Ventas">
           {loading ? <p className="text-slate-500">Cargando ventas...</p> : sales.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-slate-500">Aún no hay ventas registradas.</p>

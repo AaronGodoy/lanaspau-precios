@@ -7,7 +7,7 @@ import { formatCurrency } from '../utils/format';
 
 interface CartItem {
   product: Product;
-  quantity: int;
+  quantity: number;
 }
 
 export default function SalesPage() {
@@ -75,7 +75,7 @@ export default function SalesPage() {
     setCart(cart.filter(item => item.product.id !== productId));
   };
 
-  const total = cart.reduce((sum, item) => sum + (item.product.latest_recommended_price * item.quantity), 0);
+  const total = cart.reduce((sum, item) => sum + ((item.product.latest_recommended_price || 0) * item.quantity), 0);
 
   const handleSubmit = async () => {
     if (cart.length === 0) return;
@@ -88,7 +88,7 @@ export default function SalesPage() {
         items: cart.map(item => ({
           producto_id: item.product.id,
           cantidad: item.quantity,
-          precio_unitario: item.product.latest_recommended_price
+          precio_unitario: item.product.latest_recommended_price || 0
         }))
       };
       
@@ -100,8 +100,12 @@ export default function SalesPage() {
       // Refrescar productos para actualizar stock
       const res = await api.get('/products');
       setProducts(res.data);
-    } catch (err: any) {
-      alert(err.response?.data?.detail || 'Error al procesar la venta');
+    } catch (err: unknown) {
+      if (err instanceof Error && 'response' in err && (err as { response?: { data?: { detail?: string } } }).response?.data?.detail) {
+        alert((err as { response: { data: { detail: string } } }).response.data.detail);
+      } else {
+        alert('Error al procesar la venta');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -148,7 +152,7 @@ export default function SalesPage() {
 
       {/* Columna Derecha: Carrito de Venta */}
       <div className="sticky top-6">
-        <SectionCard title="Detalle de Venta" icon={<ShoppingCart size={20} className="text-brand-500" />}>
+        <SectionCard title="Detalle de Venta">
           {cart.length === 0 ? (
             <div className="py-12 text-center text-slate-400 flex flex-col items-center">
               <ShoppingCart size={48} className="mb-4 opacity-20" />
@@ -170,7 +174,7 @@ export default function SalesPage() {
                         <button onClick={() => updateQuantity(item.product.id, 1)} className="p-1 text-slate-500 hover:text-brand-600"><Plus size={14} /></button>
                       </div>
                       <span className="font-semibold text-brand-600">
-                        {formatCurrency(item.product.latest_recommended_price * item.quantity)}
+                        {formatCurrency((item.product.latest_recommended_price || 0) * item.quantity)}
                       </span>
                     </div>
                   </div>

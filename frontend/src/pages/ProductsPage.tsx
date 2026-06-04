@@ -60,6 +60,7 @@ export default function ProductsPage() {
     const printContent = document.getElementById('barcode-print-area');
     const windowPrint = window.open('', '', 'width=600,height=400');
     if (windowPrint && printContent) {
+      const logoUrl = window.location.origin + '/logo.png';
       windowPrint.document.write(`
         <html>
           <head>
@@ -67,18 +68,23 @@ export default function ProductsPage() {
             <style>
               body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; }
               .label-container { text-align: center; border: 1px dashed #ccc; padding: 10px; width: 50mm; }
+              .logo { max-width: 40px; margin-bottom: 5px; border-radius: 50%; }
               .price { font-size: 18px; font-weight: bold; margin-top: 5px; }
               .name { font-size: 12px; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
             </style>
           </head>
           <body>
             <div class="label-container">
+              <img src="${logoUrl}" class="logo" alt="Lanas Pau" />
               <div class="name">${selectedProductForBarcode?.nombre}</div>
-              ${printContent.innerHTML}
+              <div class="flex justify-center">
+                ${document.getElementById('barcode-print-area')?.innerHTML}
+              </div>
               <div class="price">${formatCurrency(selectedProductForBarcode?.latest_recommended_price || 0)}</div>
             </div>
             <script>
-              window.onload = function() { window.print(); window.close(); }
+              // Esperar un poco para asegurar que la imagen cargue antes de imprimir
+              setTimeout(() => { window.print(); window.close(); }, 500);
             </script>
           </body>
         </html>
@@ -91,6 +97,7 @@ export default function ProductsPage() {
     const printContent = document.getElementById('bulk-barcode-print-area');
     const windowPrint = window.open('', '', 'width=800,height=600');
     if (windowPrint && printContent) {
+      const logoUrl = window.location.origin + '/logo.png';
       windowPrint.document.write(`
         <html>
           <head>
@@ -98,6 +105,7 @@ export default function ProductsPage() {
             <style>
               body { margin: 0; font-family: sans-serif; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; padding: 20px; }
               .label-container { text-align: center; border: 1px dashed #ccc; padding: 10px; width: 50mm; box-sizing: border-box; }
+              .logo { max-width: 40px; margin-bottom: 5px; border-radius: 50%; }
               .price { font-size: 18px; font-weight: bold; margin-top: 5px; }
               .name { font-size: 12px; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
               @media print {
@@ -107,9 +115,9 @@ export default function ProductsPage() {
             </style>
           </head>
           <body>
-            ${printContent.innerHTML}
+            ${printContent.innerHTML.replace(/<img src="\/logo\.png"/g, `<img src="${logoUrl}"`)}
             <script>
-              window.onload = function() { window.print(); window.close(); }
+              setTimeout(() => { window.print(); window.close(); }, 500);
             </script>
           </body>
         </html>
@@ -376,7 +384,8 @@ export default function ProductsPage() {
               Etiqueta del Producto
             </h2>
             
-            <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-6 mb-6 inline-block mx-auto">
+            <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-6 mb-6 inline-block mx-auto text-center">
+              <img src="/logo.png" alt="Lanas Pau" className="w-12 h-12 object-cover rounded-full mx-auto mb-2" />
               <p className="text-sm font-semibold text-slate-700 mb-2 truncate max-w-[200px]" title={selectedProductForBarcode.nombre}>
                 {selectedProductForBarcode.nombre}
               </p>
@@ -427,8 +436,9 @@ export default function ProductsPage() {
                 {products.filter(p => p.stock > 0).map(p => (
                   Array.from({ length: p.stock }).map((_, i) => (
                     <div key={`${p.id}-${i}`} className="label-container" style={{ textAlign: 'center', border: '1px dashed #ccc', padding: '10px', width: '50mm', backgroundColor: 'white' }}>
+                      <img src="/logo.png" alt="Lanas Pau" style={{ maxWidth: '40px', marginBottom: '5px', borderRadius: '50%', display: 'inline-block' }} />
                       <div className="name" style={{ fontSize: '12px', marginBottom: '5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }} title={p.nombre}>{p.nombre}</div>
-                      <div className="flex justify-center">
+                      <div className="flex justify-center" style={{ display: 'flex', justifyContent: 'center' }}>
                         <BarcodeComponent value={p.codigo_producto} width={1.5} height={40} fontSize={12} displayValue={true} margin={0} />
                       </div>
                       <div className="price" style={{ fontSize: '18px', fontWeight: 'bold', marginTop: '5px' }}>{formatCurrency(p.latest_recommended_price || 0)}</div>

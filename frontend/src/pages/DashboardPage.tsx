@@ -15,7 +15,7 @@ interface DashboardStats {
   grafico_top_productos: { name: string; cantidad: number }[];
 }
 
-const CustomTooltip = ({ active, payload, label }: { active?: boolean, payload?: any[], label?: string }) => {
+const CustomTooltip = ({ active, payload, label }: { active?: boolean, payload?: { name: string; value: number }[], label?: string }) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white p-3 rounded-xl shadow-lg border border-slate-100">

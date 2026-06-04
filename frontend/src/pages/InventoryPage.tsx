@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { AlertTriangle, DollarSign, RefreshCw, PackagePlus, AlertCircle } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { AlertTriangle, DollarSign, RefreshCw, PackagePlus, AlertCircle, TrendingDown } from 'lucide-react';
 import SectionCard from '../components/SectionCard';
 import { api } from '../services/api';
 import { formatCurrency } from '../utils/format';
@@ -49,7 +49,7 @@ export default function InventoryPage() {
   });
 
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [alertsRes, salesRes, movementsRes, productsRes] = await Promise.all([
         api.get('/sales/alerts/low-stock'),
@@ -66,13 +66,16 @@ export default function InventoryPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchData();
   }, []);
 
-  const handleRegisterMovement = async (e: React.FormEvent) => {
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      fetchData();
+    }, 0);
+    return () => clearTimeout(delay);
+  }, [fetchData]);
+
+  const handleRegisterMovement = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
     try {
       await api.post('/inventory/movements', {
@@ -86,6 +89,7 @@ export default function InventoryPage() {
       fetchData(); // Recargar todo para actualizar stock y movimientos
       setMovementForm({ producto_id: '', tipo: 'ingreso', cantidad: 1, costo_unitario: '', motivo: '' });
     } catch (err) {
+      console.error(err);
       alert('Error al registrar el movimiento');
     }
   };

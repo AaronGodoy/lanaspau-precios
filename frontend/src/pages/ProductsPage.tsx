@@ -124,7 +124,7 @@ export default function ProductsPage() {
     }
   };
 
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSave = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
     try {
       const payload = {
@@ -138,7 +138,9 @@ export default function ProductsPage() {
 
       if (editingProduct) {
         // Exclude initial cost logic from PUT updates
-        const { costo_inicial_total, compra_incluye_iva, ...updatePayload } = payload;
+        const updatePayload: Record<string, unknown> = { ...payload };
+        delete updatePayload.costo_inicial_total;
+        delete updatePayload.compra_incluye_iva;
         await api.put(`/products/${editingProduct.id}`, updatePayload);
       } else {
         await api.post('/products', payload);

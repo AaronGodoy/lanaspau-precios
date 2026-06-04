@@ -22,6 +22,9 @@ export interface Product {
   proveedor_rel?: { id: number; nombre: string; };
   descripcion?: string | null;
   stock: number;
+  stock_minimo?: number;
+  costo_inicial_total?: number;
+  compra_incluye_iva?: boolean;
   margen_minimo_porcentaje?: number | null;
   margen_recomendado_porcentaje?: number | null;
   margen_premium_porcentaje?: number | null;

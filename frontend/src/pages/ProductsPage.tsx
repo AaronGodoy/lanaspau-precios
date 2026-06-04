@@ -16,6 +16,7 @@ export default function ProductsPage() {
   
   const [showModal, setShowModal] = useState(false);
   const [showBarcodeModal, setShowBarcodeModal] = useState(false);
+  const [showBulkBarcodeModal, setShowBulkBarcodeModal] = useState(false);
   const [selectedProductForBarcode, setSelectedProductForBarcode] = useState<Product | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showMargins, setShowMargins] = useState(false);
@@ -76,6 +77,37 @@ export default function ProductsPage() {
               ${printContent.innerHTML}
               <div class="price">${formatCurrency(selectedProductForBarcode?.latest_recommended_price || 0)}</div>
             </div>
+            <script>
+              window.onload = function() { window.print(); window.close(); }
+            </script>
+          </body>
+        </html>
+      `);
+      windowPrint.document.close();
+    }
+  };
+
+  const handlePrintBulkBarcodes = () => {
+    const printContent = document.getElementById('bulk-barcode-print-area');
+    const windowPrint = window.open('', '', 'width=800,height=600');
+    if (windowPrint && printContent) {
+      windowPrint.document.write(`
+        <html>
+          <head>
+            <title>Imprimir Etiquetas de Stock</title>
+            <style>
+              body { margin: 0; font-family: sans-serif; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; padding: 20px; }
+              .label-container { text-align: center; border: 1px dashed #ccc; padding: 10px; width: 50mm; box-sizing: border-box; }
+              .price { font-size: 18px; font-weight: bold; margin-top: 5px; }
+              .name { font-size: 12px; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+              @media print {
+                body { padding: 0; display: block; }
+                .label-container { page-break-inside: avoid; display: inline-block; margin: 2mm; border: 1px solid #ddd; }
+              }
+            </style>
+          </head>
+          <body>
+            ${printContent.innerHTML}
             <script>
               window.onload = function() { window.print(); window.close(); }
             </script>
@@ -169,10 +201,16 @@ export default function ProductsPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <button onClick={openCreateModal} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-500 px-6 py-3 font-semibold text-white hover:bg-brand-600">
-          <Plus size={18} />
-          Nuevo producto
-        </button>
+        <div className="flex items-center gap-3">
+          <button onClick={() => setShowBulkBarcodeModal(true)} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-100 px-6 py-3 font-semibold text-slate-700 hover:bg-slate-200">
+            <Barcode size={18} />
+            Imprimir Stock
+          </button>
+          <button onClick={openCreateModal} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-500 px-6 py-3 font-semibold text-white hover:bg-brand-600">
+            <Plus size={18} />
+            Nuevo producto
+          </button>
+        </div>
       </div>
       
       <SectionCard title="Catálogo activo">
@@ -363,6 +401,56 @@ export default function ProductsPage() {
               </button>
               <button onClick={handlePrintBarcode} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 flex items-center gap-2">
                 <Barcode size={16} /> Imprimir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBulkBarcodeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-4xl rounded-3xl bg-white p-6 shadow-xl flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <Barcode size={24} className="text-brand-500" />
+                Impresión Masiva de Stock
+              </h2>
+              <button onClick={() => setShowBulkBarcodeModal(false)} className="text-slate-400 hover:text-slate-600"><X size={24} /></button>
+            </div>
+            
+            <div className="bg-slate-50 p-4 rounded-xl mb-4 text-sm text-slate-600">
+              Se generará una etiqueta por cada unidad en stock de los productos activos. Los productos sin stock no se incluirán.
+            </div>
+
+            <div className="flex-1 overflow-y-auto bg-white border border-slate-200 rounded-2xl p-6 mb-6 relative">
+              <div id="bulk-barcode-print-area" className="flex flex-wrap gap-4 justify-center">
+                {products.filter(p => p.stock > 0).map(p => (
+                  Array.from({ length: p.stock }).map((_, i) => (
+                    <div key={`${p.id}-${i}`} className="label-container" style={{ textAlign: 'center', border: '1px dashed #ccc', padding: '10px', width: '50mm', backgroundColor: 'white' }}>
+                      <div className="name" style={{ fontSize: '12px', marginBottom: '5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }} title={p.nombre}>{p.nombre}</div>
+                      <div className="flex justify-center">
+                        <BarcodeComponent value={p.codigo_producto} width={1.5} height={40} fontSize={12} displayValue={true} margin={0} />
+                      </div>
+                      <div className="price" style={{ fontSize: '18px', fontWeight: 'bold', marginTop: '5px' }}>{formatCurrency(p.latest_recommended_price || 0)}</div>
+                    </div>
+                  ))
+                ))}
+                {products.filter(p => p.stock > 0).length === 0 && (
+                  <p className="text-slate-500 w-full text-center py-8">No hay productos con stock para imprimir.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+              <button onClick={() => setShowBulkBarcodeModal(false)} className="rounded-xl px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
+                Cancelar
+              </button>
+              <button 
+                onClick={handlePrintBulkBarcodes} 
+                disabled={products.filter(p => p.stock > 0).length === 0}
+                className="rounded-xl bg-slate-900 px-6 py-2 text-sm font-medium text-white hover:bg-slate-800 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Barcode size={16} /> Imprimir Todas
               </button>
             </div>
           </div>

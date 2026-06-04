@@ -1,77 +1,129 @@
 import { useEffect, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { Boxes, DollarSign, HandCoins, Percent } from 'lucide-react';
+import { Package, TrendingUp, DollarSign, Activity, AlertTriangle, ShoppingCart } from 'lucide-react';
 import SectionCard from '../components/SectionCard';
-import StatCard from '../components/StatCard';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { api } from '../services/api';
-import type { DashboardData } from '../services/types';
-import { formatCurrency, formatDate, formatPercent } from '../utils/format';
+import { formatCurrency } from '../utils/format';
 
-const emptyData: DashboardData = { total_productos: 0, promedio_margen: 0, total_invertido_inventario: 0, valor_potencial_venta: 0, productos_mejor_margen: [], productos_menor_margen: [], ultimos_productos: [] };
+interface DashboardStats {
+  inversion_total: number;
+  venta_potencial: number;
+  ganancia_estimada: number;
+  ventas_hoy: number;
+  productos_hoy: number;
+  grafico_ventas: { name: string; total: number }[];
+  grafico_top_productos: { name: string; cantidad: number }[];
+}
 
 export default function DashboardPage() {
-  const [data, setData] = useState<DashboardData>(emptyData);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/pricing/dashboard').then((response) => setData(response.data)).finally(() => setLoading(false));
+    const fetchStats = async () => {
+      try {
+        const res = await api.get('/sales/stats/dashboard');
+        setStats(res.data);
+      } catch (err) {
+        console.error("Error fetching dashboard stats", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
   }, []);
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-3 rounded-xl shadow-lg border border-slate-100">
+          <p className="font-semibold text-slate-900 mb-1">{label}</p>
+          <p className="text-brand-600 font-medium">
+            {payload[0].name === 'total' ? formatCurrency(payload[0].value) : `${payload[0].value} un.`}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Productos activos" value={String(data.total_productos)} hint="Catalogo disponible para cotizar." icon={<Boxes size={18} />} />
-        <StatCard label="Margen promedio" value={formatPercent(data.promedio_margen)} hint="Promedio de margenes estimados." icon={<Percent size={18} />} />
-        <StatCard label="Inversion total" value={formatCurrency(data.total_invertido_inventario)} hint="Costo real acumulado del inventario." icon={<HandCoins size={18} />} />
-        <StatCard label="Venta potencial" value={formatCurrency(data.valor_potencial_venta)} hint="Total sugerido al precio recomendado." icon={<DollarSign size={18} />} />
+      {/* Top Metrics Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-start gap-4">
+          <div className="p-3 bg-brand-50 text-brand-600 rounded-2xl">
+            <ShoppingCart size={24} />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-slate-500 mb-1">Ventas de Hoy</p>
+            <h3 className="text-2xl font-bold text-slate-900">{loading ? '...' : formatCurrency(stats?.ventas_hoy || 0)}</h3>
+            <p className="text-xs text-brand-600 font-medium mt-1">{loading ? '...' : stats?.productos_hoy} productos vendidos</p>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-start gap-4">
+          <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
+            <Package size={24} />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-slate-500 mb-1">Inversión en Inventario</p>
+            <h3 className="text-2xl font-bold text-slate-900">{loading ? '...' : formatCurrency(stats?.inversion_total || 0)}</h3>
+            <p className="text-xs text-slate-500 mt-1">Costo total de stock actual</p>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-start gap-4">
+          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
+            <TrendingUp size={24} />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-slate-500 mb-1">Venta Potencial Total</p>
+            <h3 className="text-2xl font-bold text-slate-900">{loading ? '...' : formatCurrency(stats?.venta_potencial || 0)}</h3>
+            <p className="text-xs text-emerald-600 font-medium mt-1">
+              Ganancia est.: {loading ? '...' : formatCurrency(stats?.ganancia_estimada || 0)}
+            </p>
+          </div>
+        </div>
       </div>
-      <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
-        <SectionCard title="Mejores margenes" subtitle="Visualiza los productos con mejor rentabilidad sugerida.">
-          {loading ? <p className="text-sm text-slate-500">Cargando dashboard...</p> : (
-            <div className="h-80">
+
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <SectionCard title="Ventas Últimos 7 Días">
+          <div className="h-[300px] mt-4">
+            {!loading && stats?.grafico_ventas && (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.productos_mejor_margen}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="codigo_producto" />
-                  <YAxis />
-                  <Tooltip formatter={(value: any) => typeof value === 'number' ? formatPercent(value) : value} />
-                  <Bar dataKey="margen_estimado" fill="#f97316" radius={[8, 8, 0, 0]} />
+                <AreaChart data={stats.grafico_ventas} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorVentas" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f97316" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} tickFormatter={(value) => `$${value/1000}k`} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Area type="monotone" dataKey="total" stroke="#f97316" strokeWidth={3} fillOpacity={1} fill="url(#colorVentas)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Top 5 Productos Más Vendidos">
+          <div className="h-[300px] mt-4">
+            {!loading && stats?.grafico_top_productos && (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.grafico_top_productos} layout="vertical" margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
+                  <XAxis type="number" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
+                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} width={120} />
+                  <Tooltip content={<CustomTooltip />} cursor={{fill: '#f8fafc'}} />
+                  <Bar dataKey="cantidad" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={24} />
                 </BarChart>
               </ResponsiveContainer>
-            </div>
-          )}
-        </SectionCard>
-        <SectionCard title="Ultimos productos" subtitle="Altas mas recientes del catalogo.">
-          <div className="space-y-3">
-            {data.ultimos_productos.map((item) => (
-              <div key={item.producto_id} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                <p className="font-medium text-slate-900">{item.nombre}</p>
-                <p className="text-sm text-slate-500">{item.codigo_producto} ? {item.categoria || 'Sin categoria'}</p>
-                <p className="mt-2 text-sm text-slate-500">{formatDate(item.fecha || null)}</p>
-              </div>
-            ))}
-          </div>
-        </SectionCard>
-      </div>
-      <div className="grid gap-6 xl:grid-cols-2">
-        <SectionCard title="Top margen" subtitle="Mayor porcentaje estimado sobre el precio recomendado.">
-          <div className="space-y-3">
-            {data.productos_mejor_margen.map((item) => (
-              <div key={item.producto_id} className="flex items-center justify-between rounded-2xl border border-slate-100 px-4 py-3">
-                <div><p className="font-medium text-slate-900">{item.nombre}</p><p className="text-sm text-slate-500">{item.codigo_producto}</p></div>
-                <span className="text-sm font-semibold text-emerald-600">{formatPercent(item.margen_estimado)}</span>
-              </div>
-            ))}
-          </div>
-        </SectionCard>
-        <SectionCard title="Menor margen" subtitle="Productos a revisar por baja rentabilidad.">
-          <div className="space-y-3">
-            {data.productos_menor_margen.map((item) => (
-              <div key={item.producto_id} className="flex items-center justify-between rounded-2xl border border-slate-100 px-4 py-3">
-                <div><p className="font-medium text-slate-900">{item.nombre}</p><p className="text-sm text-slate-500">{item.codigo_producto}</p></div>
-                <span className="text-sm font-semibold text-amber-600">{formatPercent(item.margen_estimado)}</span>
-              </div>
-            ))}
+            )}
           </div>
         </SectionCard>
       </div>

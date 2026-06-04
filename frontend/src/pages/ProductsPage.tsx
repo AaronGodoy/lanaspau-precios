@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Plus, Search, Edit2, Trash2, X, Settings2 } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, X, Settings2, Barcode } from 'lucide-react';
 import SectionCard from '../components/SectionCard';
 import axios from 'axios';
 import { api } from '../services/api';
 import type { Product } from '../services/types';
 import { formatCurrency } from '../utils/format';
 import type { Supplier } from './SuppliersPage';
+import BarcodeComponent from 'react-barcode';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -14,6 +15,8 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   
   const [showModal, setShowModal] = useState(false);
+  const [showBarcodeModal, setShowBarcodeModal] = useState(false);
+  const [selectedProductForBarcode, setSelectedProductForBarcode] = useState<Product | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showMargins, setShowMargins] = useState(false);
 
@@ -49,7 +52,38 @@ export default function ProductsPage() {
     const delay = setTimeout(() => {
       fetchProducts(search);
     }, 0);
-    return () => clearTimeout(delay);
+    const handlePrintBarcode = () => {
+    const printContent = document.getElementById('barcode-print-area');
+    const windowPrint = window.open('', '', 'width=600,height=400');
+    if (windowPrint && printContent) {
+      windowPrint.document.write(`
+        <html>
+          <head>
+            <title>Imprimir Etiqueta</title>
+            <style>
+              body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; }
+              .label-container { text-align: center; border: 1px dashed #ccc; padding: 10px; width: 50mm; }
+              .price { font-size: 18px; font-weight: bold; margin-top: 5px; }
+              .name { font-size: 12px; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+            </style>
+          </head>
+          <body>
+            <div class="label-container">
+              <div class="name">${selectedProductForBarcode?.nombre}</div>
+              ${printContent.innerHTML}
+              <div class="price">${formatCurrency(selectedProductForBarcode?.latest_recommended_price || 0)}</div>
+            </div>
+            <script>
+              window.onload = function() { window.print(); window.close(); }
+            </script>
+          </body>
+        </html>
+      `);
+      windowPrint.document.close();
+    }
+  };
+
+  return () => clearTimeout(delay);
   }, [search, fetchProducts]);
 
   const openCreateModal = () => {
@@ -168,6 +202,12 @@ export default function ProductsPage() {
                     <td className="py-4 text-right font-semibold text-brand-600">{formatCurrency(p.latest_recommended_price)}</td>
                     <td className="py-4 text-right">
                       <div className="flex justify-end gap-2">
+                        <button onClick={() => {
+                          setSelectedProductForBarcode(p);
+                          setShowBarcodeModal(true);
+                        }} className="p-2 text-slate-400 hover:text-slate-900 rounded-lg hover:bg-slate-100" title="Generar Código de Barras">
+                          <Barcode size={16} />
+                        </button>
                         <button onClick={() => openEditModal(p)} className="p-2 text-slate-400 hover:text-brand-600 rounded-lg hover:bg-brand-50"><Edit2 size={16} /></button>
                         <button onClick={() => handleDelete(p.id)} className="p-2 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50"><Trash2 size={16} /></button>
                       </div>
@@ -285,6 +325,44 @@ export default function ProductsPage() {
                 <button type="submit" className="rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Guardar producto</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {showBarcodeModal && selectedProductForBarcode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-xl text-center">
+            <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center justify-center gap-2">
+              <Barcode size={24} className="text-brand-500" />
+              Etiqueta del Producto
+            </h2>
+            
+            <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-6 mb-6 inline-block mx-auto">
+              <p className="text-sm font-semibold text-slate-700 mb-2 truncate max-w-[200px]" title={selectedProductForBarcode.nombre}>
+                {selectedProductForBarcode.nombre}
+              </p>
+              <div id="barcode-print-area" className="flex justify-center">
+                <BarcodeComponent 
+                  value={selectedProductForBarcode.codigo_producto} 
+                  width={1.5} 
+                  height={50} 
+                  fontSize={14}
+                  displayValue={true}
+                  margin={0}
+                />
+              </div>
+              <p className="text-xl font-bold text-slate-900 mt-3">
+                {formatCurrency(selectedProductForBarcode.latest_recommended_price || 0)}
+              </p>
+            </div>
+
+            <div className="flex justify-center gap-3">
+              <button onClick={() => setShowBarcodeModal(false)} className="rounded-xl px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
+                Cerrar
+              </button>
+              <button onClick={handlePrintBarcode} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 flex items-center gap-2">
+                <Barcode size={16} /> Imprimir
+              </button>
+            </div>
           </div>
         </div>
       )}

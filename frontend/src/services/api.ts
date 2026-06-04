@@ -12,6 +12,19 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // Token is invalid or expired, or user not found
+      localStorage.removeItem('lanaspau_token');
+      localStorage.removeItem('lanaspau_user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export async function downloadFile(path: string, filename: string) {
   const response = await api.get(path, { responseType: 'blob' });
   const url = window.URL.createObjectURL(new Blob([response.data]));

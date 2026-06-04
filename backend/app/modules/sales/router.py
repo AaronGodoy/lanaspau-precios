@@ -154,26 +154,27 @@ def get_dashboard_stats(
         for row in top_productos
     ]
 
-    # Inversión total (costo * stock)
-    inversion_total = db.scalar(
-        select(func.sum(Product.stock * Product.latest_cost_total))
-        .where(Product.stock > 0)
-        .where(Product.latest_cost_total != None)
-    ) or 0
+    # Inversión total y venta potencial
+    active_products = db.scalars(select(Product).where(Product.stock > 0)).all()
+    inversion_total = 0.0
+    venta_potencial = 0.0
     
-    # Venta potencial (precio_recomendado * stock)
-    venta_potencial = db.scalar(
-        select(func.sum(Product.stock * Product.latest_recommended_price))
-        .where(Product.stock > 0)
-        .where(Product.latest_recommended_price != None)
-    ) or 0
+    from app.db.models import ProductCost, CalculatedPrice
+    for p in active_products:
+        latest_cost = db.scalar(select(ProductCost.costo_total).where(ProductCost.producto_id == p.id).order_by(ProductCost.fecha_compra.desc(), ProductCost.id.desc()))
+        latest_price = db.scalar(select(CalculatedPrice.precio_recomendado).where(CalculatedPrice.producto_id == p.id).order_by(CalculatedPrice.fecha_calculo.desc(), CalculatedPrice.id.desc()))
+        
+        if latest_cost:
+            inversion_total += p.stock * float(latest_cost)
+        if latest_price:
+            venta_potencial += p.stock * float(latest_price)
 
     return {
         "ventas_hoy": float(ventas_hoy),
         "productos_hoy": int(productos_hoy),
         "grafico_ventas": grafico_ventas,
         "grafico_top_productos": grafico_top_productos,
-        "inversion_total": float(inversion_total),
-        "venta_potencial": float(venta_potencial),
-        "ganancia_estimada": float(venta_potencial - inversion_total)
+        "inversion_total": inversion_total,
+        "venta_potencial": venta_potencial,
+        "ganancia_estimada": venta_potencial - inversion_total
     }

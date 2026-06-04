@@ -14,7 +14,12 @@ router = APIRouter(prefix='/products', tags=['Productos'])
 def build_product_response(db: Session, product: Product) -> ProductResponse:
     latest_cost = db.scalar(select(ProductCost).where(ProductCost.producto_id == product.id).order_by(ProductCost.fecha_compra.desc(), ProductCost.id.desc()))
     latest_price = db.scalar(select(CalculatedPrice).where(CalculatedPrice.producto_id == product.id).order_by(CalculatedPrice.fecha_calculo.desc(), CalculatedPrice.id.desc()))
-    return ProductResponse(**product.__dict__, latest_cost_total=to_float(latest_cost.costo_total) if latest_cost else None, latest_recommended_price=to_float(latest_price.precio_recomendado) if latest_price else None)
+    
+    data = {c.name: getattr(product, c.name) for c in product.__table__.columns}
+    data['proveedor_rel'] = product.proveedor_rel
+    data['latest_cost_total'] = to_float(latest_cost.costo_total) if latest_cost else None
+    data['latest_recommended_price'] = to_float(latest_price.precio_recomendado) if latest_price else None
+    return ProductResponse(**data)
 
 @router.get('', response_model=list[ProductResponse])
 def list_products(db: Annotated[Session, Depends(get_db)], current_user: Annotated[User, Depends(get_current_user)], q: str | None = Query(default=None), include_inactive: bool = False):

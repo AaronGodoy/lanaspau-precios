@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, TrendingDown, DollarSign, RefreshCw, PackagePlus, AlertCircle } from 'lucide-react';
+import { AlertTriangle, DollarSign, RefreshCw, PackagePlus, AlertCircle } from 'lucide-react';
 import SectionCard from '../components/SectionCard';
 import { api } from '../services/api';
 import { formatCurrency } from '../utils/format';

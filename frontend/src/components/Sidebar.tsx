@@ -1,10 +1,12 @@
-import { BarChart3, Calculator, FileSpreadsheet, Package, Settings, Users } from 'lucide-react';
+import { BarChart3, Calculator, FileSpreadsheet, Package, Settings, Users, ShoppingCart, AlertTriangle } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 const baseItems = [
   { to: '/dashboard', label: 'Dashboard', icon: BarChart3 },
+  { to: '/sales', label: 'Vender (POS)', icon: ShoppingCart },
   { to: '/products', label: 'Productos', icon: Package },
+  { to: '/inventory', label: 'Control de Stock', icon: AlertTriangle },
   { to: '/calculator', label: 'Calculadora', icon: Calculator },
   { to: '/reports', label: 'Reportes', icon: FileSpreadsheet },
 ];

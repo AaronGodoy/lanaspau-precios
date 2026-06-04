@@ -27,6 +27,7 @@ class Product(Base):
     proveedor: Mapped[str] = mapped_column(String(120), default='Lanas Pau')
     descripcion: Mapped[str | None] = mapped_column(Text, nullable=True)
     stock: Mapped[int] = mapped_column(default=0)
+    stock_minimo: Mapped[int] = mapped_column(default=5)
     margen_minimo_porcentaje: Mapped[float | None] = mapped_column(Numeric(5, 2), nullable=True)
     margen_recomendado_porcentaje: Mapped[float | None] = mapped_column(Numeric(5, 2), nullable=True)
     margen_premium_porcentaje: Mapped[float | None] = mapped_column(Numeric(5, 2), nullable=True)
@@ -34,6 +35,30 @@ class Product(Base):
     fecha_creacion: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     costos: Mapped[list['ProductCost']] = relationship(back_populates='producto', cascade='all, delete-orphan')
     precios_calculados: Mapped[list['CalculatedPrice']] = relationship(back_populates='producto', cascade='all, delete-orphan')
+    ventas_detalle: Mapped[list['SaleItem']] = relationship(back_populates='producto')
+
+class Sale(Base):
+    __tablename__ = 'sales'
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    usuario_id: Mapped[int | None] = mapped_column(ForeignKey('users.id'), nullable=True)
+    total: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
+    metodo_pago: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    fecha_venta: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    notas: Mapped[str | None] = mapped_column(Text, nullable=True)
+    items: Mapped[list['SaleItem']] = relationship(back_populates='venta', cascade='all, delete-orphan')
+    vendedor: Mapped['User | None'] = relationship()
+
+class SaleItem(Base):
+    __tablename__ = 'sale_items'
+    __table_args__ = (Index('ix_sale_items_venta_id', 'venta_id'), Index('ix_sale_items_producto_id', 'producto_id'))
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    venta_id: Mapped[int] = mapped_column(ForeignKey('sales.id'), nullable=False)
+    producto_id: Mapped[int] = mapped_column(ForeignKey('products.id'), nullable=False)
+    cantidad: Mapped[int] = mapped_column(nullable=False)
+    precio_unitario: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
+    subtotal: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
+    venta: Mapped['Sale'] = relationship(back_populates='items')
+    producto: Mapped['Product'] = relationship(back_populates='ventas_detalle')
 
 class ProductCost(Base):
     __tablename__ = 'product_costs'

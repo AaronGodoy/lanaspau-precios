@@ -18,6 +18,7 @@ export default function ProductsPage() {
   const [form, setForm] = useState({
     nombre: '', marca: '', categoria: '', color: '', gramaje: '', proveedor: 'Lanas Pau',
     stock: 0,
+    stock_minimo: 5,
     costo_inicial_total: '',
     compra_incluye_iva: false,
     margen_minimo_porcentaje: '',
@@ -44,7 +45,7 @@ export default function ProductsPage() {
 
   const openCreateModal = () => {
     setEditingProduct(null);
-    setForm({ nombre: '', marca: '', categoria: '', color: '', gramaje: '', proveedor: 'Lanas Pau', stock: 0, costo_inicial_total: '', compra_incluye_iva: false, margen_minimo_porcentaje: '', margen_recomendado_porcentaje: '', margen_premium_porcentaje: '' });
+    setForm({ nombre: '', marca: '', categoria: '', color: '', gramaje: '', proveedor: 'Lanas Pau', stock: 0, stock_minimo: 5, costo_inicial_total: '', compra_incluye_iva: false, margen_minimo_porcentaje: '', margen_recomendado_porcentaje: '', margen_premium_porcentaje: '' });
     setShowMargins(false);
     setShowModal(true);
   };
@@ -59,6 +60,7 @@ export default function ProductsPage() {
       gramaje: p.gramaje || '',
       proveedor: p.proveedor || 'Lanas Pau',
       stock: p.stock || 0,
+      stock_minimo: (p as any).stock_minimo || 5,
       costo_inicial_total: '',
       compra_incluye_iva: false,
       margen_minimo_porcentaje: p.margen_minimo_porcentaje?.toString() || '',
@@ -186,12 +188,17 @@ export default function ProductsPage() {
             </div>
 
             <form onSubmit={handleSave} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div>
                 <label className="block text-sm font-medium text-slate-700">Nombre
                   <input required className="mt-1 w-full rounded-xl border border-slate-200 p-2.5" value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})} />
                 </label>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <label className="block text-sm font-medium text-slate-700">Stock Inicial / Actual
                   <input type="number" required min="0" className="mt-1 w-full rounded-xl border border-slate-200 p-2.5" value={form.stock} onChange={e => setForm({...form, stock: Number(e.target.value)})} />
+                </label>
+                <label className="block text-sm font-medium text-slate-700">Alerta Stock Mínimo
+                  <input type="number" required min="0" className="mt-1 w-full rounded-xl border border-slate-200 p-2.5" value={form.stock_minimo} onChange={e => setForm({...form, stock_minimo: Number(e.target.value)})} />
                 </label>
               </div>
               <div className="grid grid-cols-2 gap-4">

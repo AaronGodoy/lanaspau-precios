@@ -38,7 +38,7 @@ export default function CustomersPage() {
     return () => clearTimeout(delay);
   }, [fetchCustomers]);
 
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       if (editingCustomer) {

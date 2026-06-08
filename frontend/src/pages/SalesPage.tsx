@@ -146,18 +146,18 @@ export default function SalesPage() {
     }
   };
 
-  const handleOpenRegister = async (e: React.FormEvent) => {
+  const handleOpenRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       const res = await api.post('/cash-registers/open', registerForm);
       setCashRegister(res.data);
       setShowRegisterModal(false);
-    } catch (err: unknown) {
+    } catch {
       alert('Error al abrir la caja.');
     }
   };
 
-  const handleCloseRegister = async (e: React.FormEvent) => {
+  const handleCloseRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!cashRegister) return;
     try {
@@ -166,7 +166,7 @@ export default function SalesPage() {
       setShowCloseModal(false);
       alert('Caja cerrada con éxito.');
       setShowRegisterModal(true); // obligar a abrir otra
-    } catch (err: unknown) {
+    } catch {
       alert('Error al cerrar la caja.');
     }
   };

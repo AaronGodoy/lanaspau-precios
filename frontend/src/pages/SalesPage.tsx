@@ -152,7 +152,7 @@ export default function SalesPage() {
       const res = await api.post('/cash-registers/open', registerForm);
       setCashRegister(res.data);
       setShowRegisterModal(false);
-    } catch (err) {
+    } catch (err: unknown) {
       alert('Error al abrir la caja.');
     }
   };
@@ -166,7 +166,7 @@ export default function SalesPage() {
       setShowCloseModal(false);
       alert('Caja cerrada con éxito.');
       setShowRegisterModal(true); // obligar a abrir otra
-    } catch (err) {
+    } catch (err: unknown) {
       alert('Error al cerrar la caja.');
     }
   };

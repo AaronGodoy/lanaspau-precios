@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Plus, Edit2, Trash2, Search } from 'lucide-react';
 import SectionCard from '../components/SectionCard';
 import { api } from '../services/api';
@@ -23,7 +23,7 @@ export default function CustomersPage() {
     rut: '', nombre: '', telefono: '', email: '', direccion: ''
   });
 
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get('/customers', { params: { q: search } });
@@ -31,12 +31,12 @@ export default function CustomersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [search]);
 
   useEffect(() => {
     const delay = setTimeout(fetchCustomers, 300);
     return () => clearTimeout(delay);
-  }, [search]);
+  }, [fetchCustomers]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,8 +48,12 @@ export default function CustomersPage() {
       }
       setShowModal(false);
       fetchCustomers();
-    } catch (err: any) {
-      alert(err.response?.data?.detail || 'Error al guardar cliente');
+    } catch (err: unknown) {
+      if (err instanceof Error && 'response' in err && (err as { response?: { data?: { detail?: string } } }).response?.data?.detail) {
+        alert((err as { response: { data: { detail: string } } }).response.data.detail);
+      } else {
+        alert('Error al guardar cliente');
+      }
     }
   };
 

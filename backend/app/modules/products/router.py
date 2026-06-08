@@ -52,7 +52,7 @@ def create_product(payload: ProductCreate, db: Annotated[Session, Depends(get_db
     if exists:
         raise HTTPException(status_code=400, detail='Ya existe un producto con ese codigo.')
         
-    product_data = payload.model_dump(exclude={'costo_inicial_total', 'compra_incluye_iva'})
+    product_data = payload.model_dump(exclude={'costo_inicial_total', 'compra_incluye_iva', 'costo_envio', 'costo_retiro', 'otros_costos'})
     product = Product(**product_data)
     db.add(product)
     db.flush()
@@ -66,6 +66,9 @@ def create_product(payload: ProductCreate, db: Annotated[Session, Depends(get_db
             valor_compra=payload.costo_inicial_total,
             iva_porcentaje=float(settings.iva_porcentaje_default),
             compra_incluye_iva=payload.compra_incluye_iva,
+            costo_envio=payload.costo_envio,
+            costo_retiro=payload.costo_retiro,
+            otros_costos=payload.otros_costos,
             costos_fijos_generales=float(settings.costos_fijos_generales),
             cantidad=payload.stock if payload.stock > 0 else 1
         )
@@ -77,6 +80,9 @@ def create_product(payload: ProductCreate, db: Annotated[Session, Depends(get_db
             valor_iva=costs['valor_iva'],
             valor_compra_bruto=costs['valor_compra_bruto'],
             compra_incluye_iva=payload.compra_incluye_iva,
+            costo_envio=payload.costo_envio,
+            costo_retiro=payload.costo_retiro,
+            otros_costos=payload.otros_costos,
             costo_total=costs['costo_total']
         )
         db.add(cost)

@@ -20,6 +20,9 @@ class ProductBase(BaseModel):
 class ProductCreate(ProductBase):
     costo_inicial_total: float | None = Field(default=None, ge=0)
     compra_incluye_iva: bool = False
+    costo_envio: float = Field(default=0, ge=0)
+    costo_retiro: float = Field(default=0, ge=0)
+    otros_costos: float = Field(default=0, ge=0)
 
 class ProductUpdate(BaseModel):
     codigo_producto: str | None = Field(default=None, min_length=2, max_length=50)

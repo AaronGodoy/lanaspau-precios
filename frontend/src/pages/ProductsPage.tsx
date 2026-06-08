@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Plus, Search, Edit2, Trash2, X, Settings2, Barcode } from 'lucide-react';
 import SectionCard from '../components/SectionCard';
-import axios from 'axios';
 import { api } from '../services/api';
 import type { Product } from '../services/types';
 import { formatCurrency } from '../utils/format';
@@ -27,6 +26,9 @@ export default function ProductsPage() {
     stock_minimo: 5,
     costo_inicial_total: '',
     compra_incluye_iva: false,
+    costo_envio: '',
+    costo_retiro: '',
+    otros_costos: '',
     margen_minimo_porcentaje: '',
     margen_recomendado_porcentaje: '',
     margen_premium_porcentaje: ''
@@ -129,7 +131,7 @@ export default function ProductsPage() {
   const openCreateModal = () => {
     setEditingProduct(null);
     setInputMode('porcentaje');
-    setForm({ nombre: '', marca: '', categoria: '', color: '', gramaje: '', proveedor_id: '', stock: 0, stock_minimo: 5, costo_inicial_total: '', compra_incluye_iva: false, margen_minimo_porcentaje: '', margen_recomendado_porcentaje: '', margen_premium_porcentaje: '' });
+    setForm({ nombre: '', marca: '', categoria: '', color: '', gramaje: '', proveedor_id: '', stock: 0, stock_minimo: 5, costo_inicial_total: '', compra_incluye_iva: false, costo_envio: '', costo_retiro: '', otros_costos: '', margen_minimo_porcentaje: '', margen_recomendado_porcentaje: '', margen_premium_porcentaje: '' });
     setShowModal(true);
   };
 
@@ -147,6 +149,9 @@ export default function ProductsPage() {
       stock_minimo: p.stock_minimo || 5,
       costo_inicial_total: p.costo_inicial_total?.toString() || '',
       compra_incluye_iva: p.compra_incluye_iva || false,  
+      costo_envio: '',
+      costo_retiro: '',
+      otros_costos: '',
       margen_minimo_porcentaje: p.margen_minimo_porcentaje?.toString() || '',
       margen_recomendado_porcentaje: p.margen_recomendado_porcentaje?.toString() || '',
       margen_premium_porcentaje: p.margen_premium_porcentaje?.toString() || ''
@@ -171,6 +176,9 @@ export default function ProductsPage() {
         ...form,
         proveedor_id: form.proveedor_id ? Number(form.proveedor_id) : null,
         costo_inicial_total: form.costo_inicial_total ? Number(form.costo_inicial_total) : null,
+        costo_envio: form.costo_envio ? Number(form.costo_envio) : 0,
+        costo_retiro: form.costo_retiro ? Number(form.costo_retiro) : 0,
+        otros_costos: form.otros_costos ? Number(form.otros_costos) : 0,
         margen_minimo_porcentaje: form.margen_minimo_porcentaje !== '' ? Number(form.margen_minimo_porcentaje) : null,
         margen_recomendado_porcentaje: form.margen_recomendado_porcentaje !== '' ? Number(form.margen_recomendado_porcentaje) : null,
         margen_premium_porcentaje: form.margen_premium_porcentaje !== '' ? Number(form.margen_premium_porcentaje) : null,
@@ -181,15 +189,18 @@ export default function ProductsPage() {
         const updatePayload: Record<string, unknown> = { ...payload };
         delete updatePayload.costo_inicial_total;
         delete updatePayload.compra_incluye_iva;
+        delete updatePayload.costo_envio;
+        delete updatePayload.costo_retiro;
+        delete updatePayload.otros_costos;
         await api.put(`/products/${editingProduct.id}`, updatePayload);
       } else {
         await api.post('/products', payload);
       }
       setShowModal(false);
       fetchProducts();
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        alert(err.response?.data?.detail || 'Error al guardar producto.');
+    } catch (err: unknown) {
+      if (err instanceof Error && 'response' in err && (err as { response?: { data?: { detail?: string } } }).response?.data?.detail) {
+        alert((err as { response: { data: { detail: string } } }).response.data.detail);
       } else {
         alert('Error al guardar producto.');
       }
@@ -340,6 +351,17 @@ export default function ProductsPage() {
                         El valor incluye IVA
                       </label>
                     </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 mt-4">
+                    <label className="block text-sm font-medium text-slate-700">Envío total
+                      <input type="number" min="0" className="mt-1 w-full rounded-xl border border-slate-200 p-2.5" value={form.costo_envio} onChange={e => setForm({...form, costo_envio: e.target.value})} />
+                    </label>
+                    <label className="block text-sm font-medium text-slate-700">Traslado/Retiro
+                      <input type="number" min="0" className="mt-1 w-full rounded-xl border border-slate-200 p-2.5" value={form.costo_retiro} onChange={e => setForm({...form, costo_retiro: e.target.value})} />
+                    </label>
+                    <label className="block text-sm font-medium text-slate-700">Otros Extras
+                      <input type="number" min="0" className="mt-1 w-full rounded-xl border border-slate-200 p-2.5" value={form.otros_costos} onChange={e => setForm({...form, otros_costos: e.target.value})} />
+                    </label>
                   </div>
                 </div>
               ) : (

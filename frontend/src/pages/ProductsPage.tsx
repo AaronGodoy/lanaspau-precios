@@ -147,11 +147,11 @@ export default function ProductsPage() {
       proveedor_id: p.proveedor_id || '',
       stock: p.stock || 0,
       stock_minimo: p.stock_minimo || 5,
-      costo_inicial_total: p.costo_inicial_total?.toString() || '',
-      compra_incluye_iva: p.compra_incluye_iva || false,  
-      costo_envio: '',
-      costo_retiro: '',
-      otros_costos: '',
+      costo_inicial_total: p.latest_valor_compra?.toString() || p.costo_inicial_total?.toString() || '',
+      compra_incluye_iva: p.latest_compra_incluye_iva ?? p.compra_incluye_iva ?? false,  
+      costo_envio: p.latest_costo_envio?.toString() || '',
+      costo_retiro: p.latest_costo_retiro?.toString() || '',
+      otros_costos: p.latest_otros_costos?.toString() || '',
       margen_minimo_porcentaje: p.margen_minimo_porcentaje?.toString() || '',
       margen_recomendado_porcentaje: p.margen_recomendado_porcentaje?.toString() || '',
       margen_premium_porcentaje: p.margen_premium_porcentaje?.toString() || ''
@@ -337,54 +337,36 @@ export default function ProductsPage() {
                 </label>
               </div>
 
-              {!editingProduct ? (
-                <div className="mt-6 border-t border-slate-100 pt-4">
-                  <h4 className="text-sm font-semibold text-slate-900 mb-3">Costo inicial (Opcional)</h4>
-                  <p className="text-xs text-slate-500 mb-3">Ingresa el costo TOTAL de tu compra para generar el cálculo inicial automáticamente (se dividirá por el stock ingresado arriba).</p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <label className="block text-sm font-medium text-slate-700">Valor de compra TOTAL
-                      <input type="number" min="0" className="mt-1 w-full rounded-xl border border-slate-200 p-2.5" value={form.costo_inicial_total} onChange={e => setForm({...form, costo_inicial_total: e.target.value})} />
-                    </label>
-                    <div className="flex items-center mt-6">
-                      <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">
-                        <input type="checkbox" className="h-5 w-5 rounded border-slate-300 text-brand-500 focus:ring-brand-500" checked={form.compra_incluye_iva} onChange={e => setForm({...form, compra_incluye_iva: e.target.checked})} />
-                        El valor incluye IVA
-                      </label>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4 mt-4">
-                    <label className="block text-sm font-medium text-slate-700">Envío total
-                      <input type="number" min="0" className="mt-1 w-full rounded-xl border border-slate-200 p-2.5" value={form.costo_envio} onChange={e => setForm({...form, costo_envio: e.target.value})} />
-                    </label>
-                    <label className="block text-sm font-medium text-slate-700">Traslado/Retiro
-                      <input type="number" min="0" className="mt-1 w-full rounded-xl border border-slate-200 p-2.5" value={form.costo_retiro} onChange={e => setForm({...form, costo_retiro: e.target.value})} />
-                    </label>
-                    <label className="block text-sm font-medium text-slate-700">Otros Extras
-                      <input type="number" min="0" className="mt-1 w-full rounded-xl border border-slate-200 p-2.5" value={form.otros_costos} onChange={e => setForm({...form, otros_costos: e.target.value})} />
+              <div className="mt-6 border-t border-slate-100 pt-4">
+                <h4 className="text-sm font-semibold text-slate-900 mb-3">{editingProduct ? 'Editar Costo Actual' : 'Costo inicial (Opcional)'}</h4>
+                <p className="text-xs text-slate-500 mb-3">
+                  {editingProduct 
+                    ? 'Modifica los valores de la compra actual para recalcular el precio base. Para nuevas compras, usa el módulo de "Ingreso de Costos".'
+                    : 'Ingresa el costo TOTAL de tu compra para generar el cálculo inicial automáticamente (se dividirá por el stock ingresado arriba).'}
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <label className="block text-sm font-medium text-slate-700">Valor de compra TOTAL
+                    <input type="number" min="0" className="mt-1 w-full rounded-xl border border-slate-200 p-2.5" value={form.costo_inicial_total} onChange={e => setForm({...form, costo_inicial_total: e.target.value})} />
+                  </label>
+                  <div className="flex items-center mt-6">
+                    <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">
+                      <input type="checkbox" className="h-5 w-5 rounded border-slate-300 text-brand-500 focus:ring-brand-500" checked={form.compra_incluye_iva} onChange={e => setForm({...form, compra_incluye_iva: e.target.checked})} />
+                      El valor incluye IVA
                     </label>
                   </div>
                 </div>
-              ) : (
-                <div className="mt-6 border-t border-slate-100 pt-4">
-                  <h4 className="text-sm font-semibold text-slate-900 mb-3">Costo actual del producto</h4>
-                  <div className="rounded-xl bg-slate-50 p-4 border border-slate-200">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="text-sm font-medium text-slate-700">Costo Total Unitario Registrado:</p>
-                        <p className="text-xs text-slate-500 mt-1">Este es el último costo calculado para este producto.</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-slate-900">
-                          {editingProduct.latest_cost_total ? `$${editingProduct.latest_cost_total.toLocaleString('es-CL')}` : 'Sin costo registrado'}
-                        </p>
-                      </div>
-                    </div>
-                    <p className="text-xs text-brand-600 mt-3 font-medium">
-                      * Nota: Para ingresar una nueva compra o actualizar el costo, utiliza el módulo "Ingreso de Costos".
-                    </p>
-                  </div>
+                <div className="grid grid-cols-3 gap-4 mt-4">
+                  <label className="block text-sm font-medium text-slate-700">Envío total
+                    <input type="number" min="0" className="mt-1 w-full rounded-xl border border-slate-200 p-2.5" value={form.costo_envio} onChange={e => setForm({...form, costo_envio: e.target.value})} />
+                  </label>
+                  <label className="block text-sm font-medium text-slate-700">Traslado/Retiro
+                    <input type="number" min="0" className="mt-1 w-full rounded-xl border border-slate-200 p-2.5" value={form.costo_retiro} onChange={e => setForm({...form, costo_retiro: e.target.value})} />
+                  </label>
+                  <label className="block text-sm font-medium text-slate-700">Otros Extras
+                    <input type="number" min="0" className="mt-1 w-full rounded-xl border border-slate-200 p-2.5" value={form.otros_costos} onChange={e => setForm({...form, otros_costos: e.target.value})} />
+                  </label>
                 </div>
-              )}
+              </div>
 
               <div className="mt-6 border-t border-slate-100 pt-4">
                 <div className="flex justify-between items-start mb-3">

@@ -19,6 +19,14 @@ def build_product_response(db: Session, product: Product) -> ProductResponse:
     data['proveedor_rel'] = product.proveedor_rel
     data['latest_cost_total'] = to_float(latest_cost.costo_total) if latest_cost else None
     data['latest_recommended_price'] = to_float(latest_price.precio_recomendado) if latest_price else None
+    
+    if latest_cost:
+        data['latest_valor_compra'] = to_float(latest_cost.valor_compra_bruto) if latest_cost.compra_incluye_iva else to_float(latest_cost.valor_compra_neto)
+        data['latest_compra_incluye_iva'] = latest_cost.compra_incluye_iva
+        data['latest_costo_envio'] = to_float(latest_cost.costo_envio)
+        data['latest_costo_retiro'] = to_float(latest_cost.costo_retiro)
+        data['latest_otros_costos'] = to_float(latest_cost.otros_costos)
+        
     return ProductResponse(**data)
 
 @router.get('', response_model=list[ProductResponse])
@@ -122,6 +130,12 @@ def update_product(product_id: int, payload: ProductUpdate, db: Annotated[Sessio
         if exists:
             raise HTTPException(status_code=400, detail='El codigo de producto ya esta en uso.')
     
+    # Extract cost related fields if present to update the initial/latest cost entry
+    cost_updates = {}
+    for cost_key in ['costo_inicial_total', 'compra_incluye_iva', 'costo_envio', 'costo_retiro', 'otros_costos']:
+        if cost_key in updates:
+            cost_updates[cost_key] = updates.pop(cost_key)
+
     # Check if margins are being updated to trigger price recalculation
     margins_updated = any(k in updates for k in ['margen_minimo_porcentaje', 'margen_recomendado_porcentaje', 'margen_premium_porcentaje'])
     
@@ -130,11 +144,56 @@ def update_product(product_id: int, payload: ProductUpdate, db: Annotated[Sessio
         
     db.flush() # Ensure product margins are updated in the session
     
-    if margins_updated:
-        # Recalculate prices if there's a latest cost
-        latest_cost = db.scalar(select(ProductCost).where(ProductCost.producto_id == product.id).order_by(ProductCost.fecha_compra.desc(), ProductCost.id.desc()))
+    settings = db.scalar(select(PriceSetting).limit(1))
+    latest_cost = db.scalar(select(ProductCost).where(ProductCost.producto_id == product.id).order_by(ProductCost.fecha_compra.desc(), ProductCost.id.desc()))
+    
+    cost_was_updated = False
+    if cost_updates and latest_cost:
+        # User is editing cost fields, let's recalculate the latest cost
+        v_compra = cost_updates.get('costo_inicial_total')
+        if v_compra is None:
+            v_compra = latest_cost.valor_compra_bruto if latest_cost.compra_incluye_iva else latest_cost.valor_compra_neto
+            
+        c_iva = cost_updates.get('compra_incluye_iva')
+        if c_iva is None: c_iva = latest_cost.compra_incluye_iva
+        
+        c_envio = cost_updates.get('costo_envio')
+        if c_envio is None: c_envio = latest_cost.costo_envio
+        
+        c_retiro = cost_updates.get('costo_retiro')
+        if c_retiro is None: c_retiro = latest_cost.costo_retiro
+        
+        o_costos = cost_updates.get('otros_costos')
+        if o_costos is None: o_costos = latest_cost.otros_costos
+
+        costs = calculate_cost_breakdown(
+            valor_compra=float(v_compra),
+            iva_porcentaje=float(settings.iva_porcentaje_default),
+            compra_incluye_iva=bool(c_iva),
+            costo_envio=float(c_envio),
+            costo_retiro=float(c_retiro),
+            otros_costos=float(o_costos),
+            costos_fijos_generales=float(settings.costos_fijos_generales),
+            cantidad=product.stock if product.stock > 0 else 1
+        )
+        
+        latest_cost.valor_compra_neto = costs['valor_compra_neto']
+        latest_cost.iva_porcentaje = costs['iva_porcentaje']
+        latest_cost.valor_iva = costs['valor_iva']
+        latest_cost.valor_compra_bruto = costs['valor_compra_bruto']
+        latest_cost.compra_incluye_iva = bool(c_iva)
+        latest_cost.costo_envio = float(c_envio)
+        latest_cost.costo_retiro = float(c_retiro)
+        latest_cost.otros_costos = float(o_costos)
+        latest_cost.costo_total = costs['costo_total']
+        
+        db.flush()
+        cost_was_updated = True
+        log_change(db, current_user.id, 'product_costs', product.id, 'editar', f'Costo inicial modificado para {product.codigo_producto}.')
+
+    if margins_updated or cost_was_updated:
+        # Recalculate prices
         if latest_cost:
-            settings = db.scalar(select(PriceSetting).limit(1))
             pricing = calculate_pricing_from_total(
                 costo_total=to_float(latest_cost.costo_total), 
                 settings=settings, 

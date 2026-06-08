@@ -39,6 +39,11 @@ class ProductUpdate(BaseModel):
     margen_recomendado_porcentaje: float | None = Field(default=None, ge=0, le=100)
     margen_premium_porcentaje: float | None = Field(default=None, ge=0, le=100)
     activo: bool | None = None
+    costo_inicial_total: float | None = Field(default=None, ge=0)
+    compra_incluye_iva: bool | None = None
+    costo_envio: float | None = Field(default=None, ge=0)
+    costo_retiro: float | None = Field(default=None, ge=0)
+    otros_costos: float | None = Field(default=None, ge=0)
 
 class SupplierBrief(BaseModel):
     id: int
@@ -52,6 +57,11 @@ class ProductResponse(ProductBase):
     fecha_creacion: datetime
     latest_cost_total: float | None = None
     latest_recommended_price: float | None = None
+    latest_valor_compra: float | None = None
+    latest_compra_incluye_iva: bool | None = None
+    latest_costo_envio: float | None = None
+    latest_costo_retiro: float | None = None
+    latest_otros_costos: float | None = None
     proveedor_rel: SupplierBrief | None = None
 
 class ProductCostCreate(BaseModel):

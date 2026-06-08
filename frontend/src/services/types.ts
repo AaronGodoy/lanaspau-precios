@@ -19,7 +19,6 @@ export interface Product {
   gramaje?: string | null;
   metros?: number | null;
   proveedor_id?: number;
-  proveedor_rel?: { id: number; nombre: string; };
   descripcion?: string | null;
   stock: number;
   stock_minimo?: number;
@@ -32,6 +31,15 @@ export interface Product {
   fecha_creacion: string;
   latest_cost_total?: number | null;
   latest_recommended_price?: number | null;
+  latest_valor_compra?: number | null;
+  latest_compra_incluye_iva?: boolean | null;
+  latest_costo_envio?: number | null;
+  latest_costo_retiro?: number | null;
+  latest_otros_costos?: number | null;
+  proveedor_rel?: {
+    id: number;
+    nombre: string;
+  } | null;
 }
 
 export interface DashboardItem {

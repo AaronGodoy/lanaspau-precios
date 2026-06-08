@@ -19,6 +19,7 @@ export default function ProductsPage() {
   const [showBulkBarcodeModal, setShowBulkBarcodeModal] = useState(false);
   const [selectedProductForBarcode, setSelectedProductForBarcode] = useState<Product | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [inputMode, setInputMode] = useState<'porcentaje' | 'ganancia'>('porcentaje');
 
   const [form, setForm] = useState({
     nombre: '', marca: '', categoria: '', color: '', gramaje: '', proveedor_id: '' as number | string,
@@ -127,12 +128,14 @@ export default function ProductsPage() {
 
   const openCreateModal = () => {
     setEditingProduct(null);
+    setInputMode('porcentaje');
     setForm({ nombre: '', marca: '', categoria: '', color: '', gramaje: '', proveedor_id: '', stock: 0, stock_minimo: 5, costo_inicial_total: '', compra_incluye_iva: false, margen_minimo_porcentaje: '', margen_recomendado_porcentaje: '', margen_premium_porcentaje: '' });
     setShowModal(true);
   };
 
   const openEditModal = (p: Product) => {
     setEditingProduct(p);
+    setInputMode('porcentaje');
     setForm({
       nombre: p.nombre,
       marca: p.marca || '',
@@ -362,23 +365,70 @@ export default function ProductsPage() {
               )}
 
               <div className="mt-6 border-t border-slate-100 pt-4">
-                <h4 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                  <Settings2 size={16} className="text-brand-500" />
-                  Reglas Comerciales Específicas
-                </h4>
-                <p className="text-xs text-slate-500 mb-3">
-                  Define el margen de ganancia exclusivo para este producto. Si dejas estos campos vacíos, se usarán los porcentajes globales de Configuración.
-                </p>
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                      <Settings2 size={16} className="text-brand-500" />
+                      Reglas Comerciales Específicas
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Define la ganancia exclusiva para este producto. Si dejas esto vacío, se usarán las reglas globales.
+                    </p>
+                  </div>
+                  {editingProduct?.latest_cost_total && (
+                    <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
+                      <button type="button" onClick={() => setInputMode('porcentaje')} className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${inputMode === 'porcentaje' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                        Porcentaje (%)
+                      </button>
+                      <button type="button" onClick={() => setInputMode('ganancia')} className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${inputMode === 'ganancia' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                        Ganancia ($)
+                      </button>
+                    </div>
+                  )}
+                </div>
+                
                 <div className="grid grid-cols-3 gap-3">
-                  <label className="block text-xs font-medium text-slate-700">Margen Mínimo (%)
-                    <input type="number" step="0.1" className="mt-1 w-full rounded-lg border border-slate-200 p-2" placeholder="Ej: 20" value={form.margen_minimo_porcentaje} onChange={e => setForm({...form, margen_minimo_porcentaje: e.target.value})} />
-                  </label>
-                  <label className="block text-xs font-medium text-slate-700">Margen Recomendado (%)
-                    <input type="number" step="0.1" className="mt-1 w-full rounded-lg border border-slate-200 p-2" placeholder="Ej: 35" value={form.margen_recomendado_porcentaje} onChange={e => setForm({...form, margen_recomendado_porcentaje: e.target.value})} />
-                  </label>
-                  <label className="block text-xs font-medium text-slate-700">Margen Premium (%)
-                    <input type="number" step="0.1" className="mt-1 w-full rounded-lg border border-slate-200 p-2" placeholder="Ej: 45" value={form.margen_premium_porcentaje} onChange={e => setForm({...form, margen_premium_porcentaje: e.target.value})} />
-                  </label>
+                  {(['minimo', 'recomendado', 'premium'] as const).map(tipo => {
+                    const key = `margen_${tipo}_porcentaje` as keyof typeof form;
+                    const marginVal = form[key] as string;
+                    
+                    const handleMarginChange = (val: string) => setForm({...form, [key]: val});
+                    
+                    const handleProfitChange = (val: string) => {
+                      if (!val) return setForm({...form, [key]: ''});
+                      const ganancia = Number(val);
+                      const costo = editingProduct!.latest_cost_total!;
+                      if (ganancia >= 0) {
+                        const precio = costo + ganancia;
+                        const margen = (1 - (costo / precio)) * 100;
+                        setForm({...form, [key]: margen.toFixed(2)});
+                      }
+                    };
+
+                    const displayProfit = () => {
+                      if (!marginVal || !editingProduct?.latest_cost_total) return '';
+                      const m = Number(marginVal);
+                      if (m >= 100) return '';
+                      const price = editingProduct.latest_cost_total / (1 - m / 100);
+                      return Math.round(price - editingProduct.latest_cost_total).toString();
+                    };
+
+                    return (
+                      <label key={tipo} className="block text-xs font-medium text-slate-700 capitalize">
+                        {inputMode === 'porcentaje' ? `Margen ${tipo} (%)` : `Ganancia ${tipo} ($)`}
+                        {inputMode === 'porcentaje' || !editingProduct?.latest_cost_total ? (
+                          <input type="number" step="0.1" className="mt-1 w-full rounded-lg border border-slate-200 p-2" placeholder="Ej: 35" value={marginVal} onChange={e => handleMarginChange(e.target.value)} />
+                        ) : (
+                          <input type="number" className="mt-1 w-full rounded-lg border border-brand-200 bg-brand-50 p-2" placeholder="Ej: 1500" value={displayProfit()} onChange={e => handleProfitChange(e.target.value)} />
+                        )}
+                        {inputMode === 'ganancia' && editingProduct?.latest_cost_total && marginVal && (
+                          <span className="block text-[10px] text-slate-500 mt-1 font-normal normal-case">
+                            Equivale a un {Number(marginVal).toFixed(1)}%
+                          </span>
+                        )}
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
 

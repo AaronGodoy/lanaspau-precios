@@ -3,17 +3,18 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 const baseItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: BarChart3 },
   { to: '/sales', label: 'Vender (POS)', icon: ShoppingCart },
-  { to: '/products', label: 'Productos', icon: Package },
-  { to: '/inventory', label: 'Control de Stock', icon: AlertTriangle },
-  { to: '/suppliers', label: 'Proveedores', icon: Truck },
-  { to: '/calculator', label: 'Calculadora', icon: Calculator },
-  { to: '/reports', label: 'Reportes', icon: FileSpreadsheet },
+  { to: '/inventory', label: 'Consultar Stock', icon: AlertTriangle },
 ];
 
 const adminItems = [
-  { to: '/settings', label: 'Configuracion', icon: Settings },
+  { to: '/dashboard', label: 'Dashboard', icon: BarChart3 },
+  { to: '/products', label: 'Productos y Costos', icon: Package },
+  { to: '/suppliers', label: 'Proveedores', icon: Truck },
+  { to: '/customers', label: 'Clientes', icon: Users },
+  { to: '/calculator', label: 'Calculadora', icon: Calculator },
+  { to: '/reports', label: 'Reportes', icon: FileSpreadsheet },
+  { to: '/settings', label: 'Configuración', icon: Settings },
   { to: '/users', label: 'Usuarios', icon: Users },
 ];
 

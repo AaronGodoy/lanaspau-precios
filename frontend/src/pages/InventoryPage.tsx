@@ -5,6 +5,8 @@ import { api } from '../services/api';
 import { formatCurrency } from '../utils/format';
 import type { Product } from '../services/types';
 
+import { useAuth } from '../hooks/useAuth';
+
 interface LowStockAlert {
   producto_id: number;
   codigo_producto: string;
@@ -32,6 +34,8 @@ interface InventoryMovement {
 }
 
 export default function InventoryPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.rol === 'administrador';
   const [alerts, setAlerts] = useState<LowStockAlert[]>([]);
   const [recentSales, setRecentSales] = useState<Sale[]>([]);
   const [movements, setMovements] = useState<InventoryMovement[]>([]);
@@ -116,10 +120,12 @@ export default function InventoryPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold text-slate-900">Control de Inventario</h1>
-        <button onClick={() => setShowMovementModal(true)} className="flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 transition-colors">
-          <RefreshCw size={18} />
-          Registrar Movimiento
-        </button>
+        {isAdmin && (
+          <button onClick={() => setShowMovementModal(true)} className="flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 transition-colors">
+            <RefreshCw size={18} />
+            Registrar Movimiento
+          </button>
+        )}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-red-50 border border-red-100 p-6 rounded-3xl flex items-center gap-4">

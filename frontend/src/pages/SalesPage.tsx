@@ -18,7 +18,35 @@ export default function SalesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [metodoPago, setMetodoPago] = useState('Efectivo');
   const [notas, setNotas] = useState('');
+  
+  const [cashRegister, setCashRegister] = useState<{id: number, monto_inicial: number} | null>(null);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [showCloseModal, setShowCloseModal] = useState(false);
+  const [registerForm, setRegisterForm] = useState({ monto_inicial: 0, notas: '' });
+  const [closeForm, setCloseForm] = useState({ monto_final_real: 0, notas: '' });
 
+  const [customers, setCustomers] = useState<{id: number, nombre: string, rut: string}[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState('');
+  
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        const [regRes, custRes] = await Promise.all([
+          api.get('/cash-registers/current'),
+          api.get('/customers')
+        ]);
+        if (regRes.data) {
+          setCashRegister(regRes.data);
+        } else {
+          setShowRegisterModal(true);
+        }
+        setCustomers(custRes.data);
+      } catch (err) {
+        console.error("Error fetching initial data", err);
+      }
+    };
+    fetchInitialData();
+  }, []);
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
@@ -79,12 +107,18 @@ export default function SalesPage() {
 
   const handleSubmit = async () => {
     if (cart.length === 0) return;
+    if (!cashRegister) {
+      alert('Debes abrir la caja antes de vender.');
+      return;
+    }
     setIsSubmitting(true);
     
     try {
       const payload = {
         metodo_pago: metodoPago,
         notas: notas,
+        cliente_id: selectedCustomer ? Number(selectedCustomer) : null,
+        caja_id: cashRegister.id,
         items: cart.map(item => ({
           producto_id: item.product.id,
           cantidad: item.quantity,
@@ -97,6 +131,7 @@ export default function SalesPage() {
       setCart([]);
       setNotas('');
       setSearch('');
+      setSelectedCustomer('');
       // Refrescar productos para actualizar stock
       const res = await api.get('/products');
       setProducts(res.data);
@@ -111,10 +146,48 @@ export default function SalesPage() {
     }
   };
 
+  const handleOpenRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await api.post('/cash-registers/open', registerForm);
+      setCashRegister(res.data);
+      setShowRegisterModal(false);
+    } catch (err) {
+      alert('Error al abrir la caja.');
+    }
+  };
+
+  const handleCloseRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cashRegister) return;
+    try {
+      await api.post(`/cash-registers/${cashRegister.id}/close`, closeForm);
+      setCashRegister(null);
+      setShowCloseModal(false);
+      alert('Caja cerrada con éxito.');
+      setShowRegisterModal(true); // obligar a abrir otra
+    } catch (err) {
+      alert('Error al cerrar la caja.');
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6">
       {/* Columna Izquierda: Buscador de productos */}
       <div className="space-y-4">
+        <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Turno Actual</h2>
+            <p className="text-sm text-slate-500">Caja #{cashRegister?.id || '-'}</p>
+          </div>
+          <button 
+            onClick={() => setShowCloseModal(true)}
+            className="px-4 py-2 bg-red-50 text-red-600 font-semibold rounded-xl hover:bg-red-100 transition-colors"
+          >
+            Cerrar Caja
+          </button>
+        </div>
+        
         <div className="relative">
           <input
             type="text"
@@ -183,6 +256,20 @@ export default function SalesPage() {
 
               <div className="border-t border-slate-100 pt-4 space-y-4">
                 <div className="flex justify-between items-center">
+                  <span className="text-slate-500 font-medium text-sm">Cliente</span>
+                  <select 
+                    value={selectedCustomer} 
+                    onChange={e => setSelectedCustomer(e.target.value)}
+                    className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium outline-none focus:border-brand-500 w-1/2"
+                  >
+                    <option value="">Cliente genérico (Boleta)</option>
+                    {customers.map(c => (
+                      <option key={c.id} value={c.id}>{c.nombre}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex justify-between items-center">
                   <span className="text-slate-500 font-medium">Método de pago</span>
                   <select 
                     value={metodoPago} 
@@ -223,6 +310,48 @@ export default function SalesPage() {
           )}
         </SectionCard>
       </div>
+
+      {/* Modal Abrir Caja */}
+      {showRegisterModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-xl">
+            <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+              Apertura de Caja
+            </h2>
+            <p className="text-sm text-slate-500 mb-4">Para comenzar a vender, ingresa el monto inicial (sencillo) en caja.</p>
+            <form onSubmit={handleOpenRegister} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Monto Inicial Efectivo ($)</label>
+                <input type="number" required min="0" className="mt-1 w-full rounded-xl border border-slate-200 p-3" value={registerForm.monto_inicial} onChange={e => setRegisterForm({...registerForm, monto_inicial: Number(e.target.value)})} />
+              </div>
+              <button type="submit" className="w-full rounded-xl bg-brand-500 px-4 py-3 font-bold text-white hover:bg-brand-600">Abrir Caja y Comenzar</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Cerrar Caja */}
+      {showCloseModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-xl">
+            <h2 className="text-xl font-bold text-slate-900 mb-6">Cierre de Caja</h2>
+            <form onSubmit={handleCloseRegister} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Monto Final Real (Efectivo contado)</label>
+                <input type="number" required min="0" className="mt-1 w-full rounded-xl border border-slate-200 p-3" value={closeForm.monto_final_real} onChange={e => setCloseForm({...closeForm, monto_final_real: Number(e.target.value)})} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Notas / Novedades</label>
+                <textarea className="mt-1 w-full rounded-xl border border-slate-200 p-3" rows={2} value={closeForm.notas} onChange={e => setCloseForm({...closeForm, notas: e.target.value})}></textarea>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button type="button" onClick={() => setShowCloseModal(false)} className="flex-1 rounded-xl px-4 py-3 font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200">Cancelar</button>
+                <button type="submit" className="flex-1 rounded-xl bg-red-600 px-4 py-3 font-bold text-white hover:bg-red-700">Cerrar Turno</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

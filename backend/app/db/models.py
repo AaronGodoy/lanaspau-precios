@@ -27,6 +27,34 @@ class Supplier(Base):
     fecha_creacion: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     productos: Mapped[list['Product']] = relationship(back_populates='proveedor_rel')
 
+class Customer(Base):
+    __tablename__ = 'customers'
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    rut: Mapped[str | None] = mapped_column(String(20), unique=True, nullable=True, index=True)
+    nombre: Mapped[str] = mapped_column(String(150), nullable=False, index=True)
+    telefono: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    direccion: Mapped[str | None] = mapped_column(Text, nullable=True)
+    activo: Mapped[bool] = mapped_column(Boolean, default=True)
+    fecha_creacion: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    ventas: Mapped[list['Sale']] = relationship(back_populates='cliente')
+
+class CashRegister(Base):
+    __tablename__ = 'cash_registers'
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    usuario_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False)
+    fecha_apertura: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    fecha_cierre: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    monto_inicial: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    monto_final_esperado: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
+    monto_final_real: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
+    diferencia: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
+    notas: Mapped[str | None] = mapped_column(Text, nullable=True)
+    estado: Mapped[str] = mapped_column(String(20), default='abierta') # 'abierta', 'cerrada'
+    
+    usuario: Mapped['User'] = relationship()
+    ventas: Mapped[list['Sale']] = relationship(back_populates='caja')
+
 class Product(Base):
     __tablename__ = 'products'
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
@@ -70,12 +98,16 @@ class Sale(Base):
     __tablename__ = 'sales'
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     usuario_id: Mapped[int | None] = mapped_column(ForeignKey('users.id'), nullable=True)
+    cliente_id: Mapped[int | None] = mapped_column(ForeignKey('customers.id'), nullable=True)
+    caja_id: Mapped[int | None] = mapped_column(ForeignKey('cash_registers.id'), nullable=True)
     total: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     metodo_pago: Mapped[str | None] = mapped_column(String(50), nullable=True)
     fecha_venta: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
     notas: Mapped[str | None] = mapped_column(Text, nullable=True)
     items: Mapped[list['SaleItem']] = relationship(back_populates='venta', cascade='all, delete-orphan')
     vendedor: Mapped['User | None'] = relationship()
+    cliente: Mapped['Customer | None'] = relationship(back_populates='ventas')
+    caja: Mapped['CashRegister | None'] = relationship(back_populates='ventas')
 
 class SaleItem(Base):
     __tablename__ = 'sale_items'
